@@ -16,7 +16,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IOptions<DataProtectionTokenProviderOptions> _tokenProviderOptions;
 
-        public EmailService(IConfiguration config, UserManager<ApplicationUser> userManager, IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions)
+        public EmailService(IConfiguration config, UserManager<ApplicationUser> userManager, 
+            IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions)
         {
             _config = config;
             _userManager = userManager;

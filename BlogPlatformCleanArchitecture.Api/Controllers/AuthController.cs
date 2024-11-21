@@ -22,12 +22,33 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             _tokenService = tokenService;
         }
 
-        [HttpPost("register-user")]
+        [HttpPost("register-reader")]
         public async Task<IActionResult> RegisterReaderAsync([FromBody] RegistrationDto registrationDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var result = await _authService.RegisterUserAsync(registrationDto, "User");
+            var result = await _authService.RegisterUserAsync(registrationDto, "Reader");
+
+            if (!result.IsAuthenticated)
+                return Ok(result.Message);
+
+            return Ok(new
+            {
+                result.Email,
+                result.Username,
+                result.Role,
+                result.IsAuthenticated,
+                result.IsConfirmed,
+                result.Message,
+            });
+        }
+
+        [HttpPost("register-author")]
+        public async Task<IActionResult> RegisterAuthorAsync([FromBody] RegistrationDto registrationDto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var result = await _authService.RegisterUserAsync(registrationDto, "Author");
 
             if (!result.IsAuthenticated)
                 return Ok(result.Message);

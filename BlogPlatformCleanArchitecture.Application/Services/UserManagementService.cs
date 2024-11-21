@@ -59,8 +59,12 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<string> DeleteUserAsync(string UserName, string CurrentUserName, string refreshToken)
         {
             var user = await _userManager.FindByNameAsync(UserName);
+            var currentUser = await _userManager.FindByNameAsync(CurrentUserName);
+            var role = (await _userManager.GetRolesAsync(currentUser)).First().ToUpper();
             if (user is null || user.IsDeleted)
-                return $"User with UserName: {UserName} isn't found!" ;
+                return $"User with UserName: {UserName} isn't found!";
+            if (!CurrentUserName.Equals(UserName) && role != "ADMIN")
+                return $"You Are Not Allowed to perform this action!";
             user.IsDeleted = true;
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)

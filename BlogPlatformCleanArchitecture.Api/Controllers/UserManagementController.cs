@@ -22,7 +22,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpGet("get-users")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> GetUsersAsync()
         {
             var users = await _userManagementService.GetUSersAsync();
@@ -43,7 +43,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpDelete("delete-user")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> DeleteUserAsync(string UserName)
         {
             var CurrentUserName = Request.Cookies["UserName"];
