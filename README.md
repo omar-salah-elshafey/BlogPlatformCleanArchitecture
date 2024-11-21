@@ -68,3 +68,7 @@ The platform has three user roles with different levels of access:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit pull requests for bug fixes, new features, or improvements.
+
+![image](https://github.com/user-attachments/assets/788a24c5-1ea3-438e-a315-9aa468b11b7e)
+![image](https://github.com/user-attachments/assets/e0d4e65c-07d2-4702-93a8-7f225b27ca9c)
+![image](https://github.com/user-attachments/assets/f15234bd-54d3-49cb-ae25-051b701375f6)
