@@ -24,7 +24,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<string> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
         {
             var user = await _userManager.FindByEmailAsync(resetPasswordDto.Email);
-            if (user == null)
+            if (user == null || user.IsDeleted)
                 return "Email is incorrect!";
 
             var result = await _userManager.ResetPasswordAsync(user, resetPasswordDto.Token, resetPasswordDto.NewPassword);
@@ -37,7 +37,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<string> ChangePasswordAsync(ChangePasswordDto changePasswordDto)
         {
             var user = await _userManager.FindByEmailAsync(changePasswordDto.Email);
-            if (user == null)
+            if (user == null || user.IsDeleted)
                 return "Email is incorrect!";
 
             if (changePasswordDto.CurrentPassword.Equals(changePasswordDto.NewPassword))
@@ -54,7 +54,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<string> ResetPasswordRequestAsync(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
-            if (user is null)
+            if (user is null || user.IsDeleted)
                 return "The Email you Provided is not Correct!" ;
             //generating the token to verify the user's email
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -70,7 +70,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<ResetPasswordResponseModel> VerifyResetPasswordRequestAsync(ConfirmEmailDto confirmEmailDto)
         {
             var user = await _userManager.FindByEmailAsync(confirmEmailDto.Email);
-            if (user == null)
+            if (user == null || user.IsDeleted)
                 return new ResetPasswordResponseModel { IsRequestVerified = false, Message = "User not found." };
             var result = await _userManager.VerifyUserTokenAsync(user, 
                 _userManager.Options.Tokens.PasswordResetTokenProvider, "ResetPassword", confirmEmailDto.Token);

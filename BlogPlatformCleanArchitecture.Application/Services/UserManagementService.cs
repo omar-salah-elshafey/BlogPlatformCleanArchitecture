@@ -46,7 +46,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<string> ChangeRoleAsync(ChangeUserRoleDto changeRoleDto)
         {
             var user = await _userManager.FindByNameAsync(changeRoleDto.UserName);
-            if (user == null)
+            if (user == null || user.IsDeleted)
                 return ("Invalid UserName!");
             if (!await _roleManager.RoleExistsAsync(changeRoleDto.Role))
                 return ("Invalid Role!");

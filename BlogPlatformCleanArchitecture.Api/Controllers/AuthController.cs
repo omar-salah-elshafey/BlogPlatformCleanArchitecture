@@ -15,11 +15,14 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         private readonly IAuthService _authService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITokenService _tokenService;
-        public AuthController(IAuthService authService, UserManager<ApplicationUser> userManager, ITokenService tokenService)
+        private readonly ICookieService _cookieService;
+        public AuthController(IAuthService authService, UserManager<ApplicationUser> userManager,
+            ITokenService tokenService, ICookieService cookieService)
         {
             _authService = authService;
             _userManager = userManager;
             _tokenService = tokenService;
+            _cookieService = cookieService;
         }
 
         [HttpPost("register-reader")]
@@ -99,10 +102,10 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
 
             if (!string.IsNullOrEmpty(result.RefreshToken))
             {
-                SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpiresOn);
+                _cookieService.SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpiresOn);
             }
-            SetUserIdCookie(user.Id);
-            SetUserNameCookie(user.UserName);
+            _cookieService.SetUserIdCookie(user.Id);
+            _cookieService.SetUserNameCookie(user.UserName);
             return Ok(new
             {
                 result.AccessToken,
@@ -120,10 +123,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             var result = await _authService.LogoutAsync(refreshToken, userId);
             if (!result)
                 return BadRequest(result);
-
-            RemoveRefreshTokenCookie(refreshToken);
-            RemoveUserIdCookie(userId);
-            RemoveUserNameCookie(userName);
             return Ok("Successfully logged out");
         }
 
@@ -136,7 +135,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
 
             if (!result.IsAuthenticated)
                 return BadRequest(result.Message);
-            SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpiresOn);
+            _cookieService.SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpiresOn);
             return Ok(new
             {
                 result.AccessToken,
@@ -144,77 +143,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
                 result.RefreshToken,
                 result.RefreshTokenExpiresOn,
             });
-        }
-
-
-        private void SetRefreshTokenCookie(string refreshToken, DateTime ex)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = ex.ToLocalTime(),
-                Secure = true,    // Set this in production when using HTTPS
-                SameSite = SameSiteMode.Strict
-            };
-            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
-        }
-
-        private void SetUserIdCookie(string userId)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,    // Set this in production when using HTTPS
-                SameSite = SameSiteMode.Strict
-            };
-            Response.Cookies.Append("userID", userId, cookieOptions);
-        }
-
-        private void SetUserNameCookie(string userName)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,    // Set this in production when using HTTPS
-                SameSite = SameSiteMode.Strict
-            };
-            Response.Cookies.Append("userName", userName, cookieOptions);
-        }
-
-        private void RemoveRefreshTokenCookie(string refreshToken)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = DateTime.UtcNow.AddDays(-1).ToLocalTime(),
-                Secure = true,    // Set this in production when using HTTPS
-                SameSite = SameSiteMode.Strict
-            };
-            Response.Cookies.Append("refreshToken", "", cookieOptions);
-        }
-
-        private void RemoveUserIdCookie(string userId)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = DateTime.UtcNow.AddDays(-1).ToLocalTime(),
-                Secure = true,    // Set this in production when using HTTPS
-                SameSite = SameSiteMode.Strict
-            };
-            Response.Cookies.Append("userID", "", cookieOptions);
-        }
-
-        private void RemoveUserNameCookie(string userName)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = DateTime.UtcNow.AddDays(-1).ToLocalTime(),
-                Secure = true,    // Set this in production when using HTTPS
-                SameSite = SameSiteMode.Strict
-            };
-            Response.Cookies.Append("userName", "", cookieOptions);
         }
     }
 }

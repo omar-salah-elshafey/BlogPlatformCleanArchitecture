@@ -30,6 +30,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.DependencyInjection
             services.AddScoped<IUserManagementService, UserManagementService>();
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<ICommentService, CommentService>();
+            services.AddScoped<ICookieService, CookieService>();
             return services;
         }
     }

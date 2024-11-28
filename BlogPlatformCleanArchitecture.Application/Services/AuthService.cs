@@ -17,9 +17,10 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         private readonly IEmailService _emailService;
         public readonly ITokenService _tokenService;
         private readonly ILogger<AuthService> _logger;
+        private readonly ICookieService _cookieService;
         public AuthService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
             IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions, IEmailService emailService,
-            ITokenService tokenService, ILogger<AuthService> logger)
+            ITokenService tokenService, ILogger<AuthService> logger, ICookieService cookieService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -27,6 +28,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _emailService = emailService;
             _tokenService = tokenService;
             _logger = logger;
+            _cookieService = cookieService;
         }
 
         public async Task<AuthResponseModel> RegisterUserAsync(RegistrationDto registrationDto, string role)
@@ -134,6 +136,9 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             user.IsActive = false;
             await _userManager.UpdateAsync(user);
             _logger.LogInformation("User logged out successfully.");
+            _cookieService.RemoveFromCookies("refreshToken");
+            _cookieService.RemoveFromCookies("UserName");
+            _cookieService.RemoveFromCookies("UserID");
             return true;
         }
     }

@@ -49,7 +49,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 return new AuthResponseModel { IsConfirmed = false, Message = "User ID and token are required." };
 
             var user = await _userManager.FindByEmailAsync(confirmEmailDto.Email);
-            if (user == null)
+            if (user == null || user.IsDeleted)
                 return new AuthResponseModel { IsConfirmed = false, Message = "User not found." };
             if (user.EmailConfirmed)
                 return new AuthResponseModel { Message = "Your Email is already confirmed" };
@@ -63,7 +63,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<AuthResponseModel> ResendEmailConfirmationTokenAsync(string Email)
         {
             var user = await _userManager.FindByEmailAsync(Email);
-            if (user == null)
+            if (user == null || user.IsDeleted)
                 return new AuthResponseModel { IsConfirmed = false, Message = "User not found." };
 
             if (await _userManager.IsEmailConfirmedAsync(user))

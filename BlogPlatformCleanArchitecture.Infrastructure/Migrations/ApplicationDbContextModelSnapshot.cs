@@ -316,7 +316,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.Post", b =>
@@ -352,7 +352,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("Posts");
+                    b.ToTable("Posts", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -408,7 +408,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Migrations
 
             modelBuilder.Entity("TaskManagement.Domain.Entities.ApplicationUser", b =>
                 {
-                    b.OwnsMany("TaskManagement.Domain.Entities.RefreshToken", "RefreshTokens", b1 =>
+                    b.OwnsMany("TaskManagement.Domain.Entities.ApplicationUser.RefreshTokens#TaskManagement.Domain.Entities.RefreshToken", "RefreshTokens", b1 =>
                         {
                             b1.Property<string>("ApplicationUserId")
                                 .HasColumnType("nvarchar(450)");
@@ -434,7 +434,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Migrations
 
                             b1.HasKey("ApplicationUserId", "Id");
 
-                            b1.ToTable("RefreshToken");
+                            b1.ToTable("RefreshToken", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("ApplicationUserId");
