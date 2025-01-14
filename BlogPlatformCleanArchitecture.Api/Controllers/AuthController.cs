@@ -32,9 +32,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
                 return BadRequest(ModelState);
             var result = await _authService.RegisterUserAsync(registrationDto, "Reader");
 
-            if (!result.IsAuthenticated)
-                return Ok(result.Message);
-
             return Ok(new
             {
                 result.Email,
@@ -52,9 +49,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
             var result = await _authService.RegisterUserAsync(registrationDto, "Author");
-
-            if (!result.IsAuthenticated)
-                return Ok(result.Message);
 
             return Ok(new
             {
@@ -75,9 +69,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
                 return BadRequest(ModelState);
             var result = await _authService.RegisterUserAsync(registrationDto, "Admin");
 
-            if (!result.IsAuthenticated)
-                return BadRequest(result.Message);
-
             return Ok(new
             {
                 result.Email,
@@ -97,19 +88,20 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             var result = await _authService.LoginAsync(loginDto);
             var user = await _userManager.FindByNameAsync(loginDto.EmailOrUserName)
                ?? await _userManager.FindByEmailAsync(loginDto.EmailOrUserName);
-            if (!result.IsAuthenticated)
-                return BadRequest(result.Message);
 
-            if (!string.IsNullOrEmpty(result.RefreshToken))
-            {
-                _cookieService.SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpiresOn);
-            }
-            _cookieService.SetUserIdCookie(user.Id);
-            _cookieService.SetUserNameCookie(user.UserName);
+            //if (!string.IsNullOrEmpty(result.RefreshToken))
+            //{
+            //    _cookieService.SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpiresOn);
+            //}
+            _cookieService.SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpiresOn);
+            _cookieService.SetUserIdCookie(user!.Id);
+            _cookieService.SetUserNameCookie(user.UserName!);
             return Ok(new
             {
                 result.AccessToken,
-                result.ExpiresAt
+                result.ExpiresAt,
+                result.RefreshToken,
+                result.RefreshTokenExpiresOn,
             });
         }
 

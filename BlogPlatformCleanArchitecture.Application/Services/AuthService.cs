@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
+using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -35,9 +36,10 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             //check if user exists
             if (await _userManager.FindByEmailAsync(registrationDto.Email) is not null)
-                return new AuthResponseModel { Message = "This Email is already used!" };
+                throw new DuplicateEmailException("This Email is already used!");
+
             if (await _userManager.FindByNameAsync(registrationDto.UserName) is not null)
-                return new AuthResponseModel { Message = "This UserName is already used!" };
+                throw new DuplicateUsernameException("This Username is already used!");
 
             // Create the new user
             var user = new ApplicationUser
@@ -51,7 +53,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (!result.Succeeded)
             {
                 var errors = string.Join(Environment.NewLine, result.Errors.Select(e => e.Description));
-                return new AuthResponseModel { Message = errors };
+                throw new UserCreationException($"Failed to create user: {errors}");
             }
             // Assign the user to the specified role
             await _userManager.AddToRoleAsync(user, role);
@@ -64,7 +66,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
 
             await _emailService.SendEmailAsync(user.Email, "Email Verification Code.",
                 $"Hello {user.UserName}, Use this new token to verify your Email: {token}{Environment.NewLine}This code is Valid only for {expirationTime} Minutes.");
-
+            _logger.LogInformation($"User with Email {user.Email} has been created Successfully!");
             return new AuthResponseModel
             {
                 Email = user.Email,
@@ -80,18 +82,21 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                ?? await _userManager.FindByEmailAsync(loginDto.EmailOrUserName); //check if the user exists
             if (user == null || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
             {
-                authResponseModel.IsAuthenticated = false;
-                authResponseModel.Message = "Invalid Email or Password!";
-                return authResponseModel;
+                _logger.LogWarning("Invalid Email or Password!");
+                throw new InvalidCredentialsException("Invalid Email or Password!");                
             }
             if (user.IsDeleted)
             {
-                authResponseModel.Message = "User Not Found!";
-                return authResponseModel;
+                _logger.LogWarning("User Not Found!");
+                throw new UserNotFoundException("User Not Found!");
             }
-            if (!user.EmailConfirmed)
-                return new AuthResponseModel { Message = "Please Confirm Your Email First." };
+            if (!user.EmailConfirmed){
+                _logger.LogWarning("Please Confirm Your Email First.");
+                throw new EmailNotConfirmedException("Please Confirm Your Email First.");
+            }
+
             var jwtSecurityToken = await _tokenService.CreateJwtTokenAsync(user);
+
             authResponseModel.IsAuthenticated = true;
             authResponseModel.Email = user.Email;
             authResponseModel.ExpiresAt = jwtSecurityToken.ValidTo;
@@ -119,7 +124,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 authResponseModel.RefreshToken = activeToken.Token;
                 authResponseModel.RefreshTokenExpiresOn = activeToken.ExpiresOn;
             }
-
+            _logger.LogInformation("User Logged in Successfully!");
             return authResponseModel;
         }
 
@@ -137,8 +142,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             await _userManager.UpdateAsync(user);
             _logger.LogInformation("User logged out successfully.");
             _cookieService.RemoveFromCookies("refreshToken");
-            _cookieService.RemoveFromCookies("UserName");
-            _cookieService.RemoveFromCookies("UserID");
+            _cookieService.RemoveFromCookies("userName");
+            _cookieService.RemoveFromCookies("userID");
             return true;
         }
     }

@@ -7,6 +7,7 @@ using BlogPlatformCleanArchitecture.Infrastructure.Data;
 using Microsoft.OpenApi.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Application.Configurations;
+using BlogPlatformCleanArchitecture.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,7 +83,13 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
     options.TokenLifespan = TimeSpan.FromMinutes(5); // Set token expiration to .... minutes
 });
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader());
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -90,7 +97,9 @@ if (app.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets<Program>();
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(); 
+    app.UseCors("AllowAll");
+    app.UseMiddleware<GlobalExceptionMiddleware>();
 }
 
 app.UseHttpsRedirection();

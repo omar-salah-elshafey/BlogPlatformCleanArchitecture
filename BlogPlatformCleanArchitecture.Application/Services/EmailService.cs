@@ -7,6 +7,8 @@ using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Application.DTOs;
+using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
+using Microsoft.Extensions.Logging;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -15,13 +17,15 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         private readonly IConfiguration _config;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IOptions<DataProtectionTokenProviderOptions> _tokenProviderOptions;
+        private readonly ILogger<EmailService> _logger;
 
-        public EmailService(IConfiguration config, UserManager<ApplicationUser> userManager, 
-            IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions)
+        public EmailService(IConfiguration config, UserManager<ApplicationUser> userManager,
+            IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions, ILogger<EmailService> logger)
         {
             _config = config;
             _userManager = userManager;
             _tokenProviderOptions = tokenProviderOptions;
+            _logger = logger;
         }
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
@@ -42,32 +46,63 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             await smtp.DisconnectAsync(true);
         }
 
-        public async Task<AuthResponseModel> VerifyEmail(ConfirmEmailDto confirmEmailDto)
+        public async Task VerifyEmail(ConfirmEmailDto confirmEmailDto)
         {
 
             if (string.IsNullOrEmpty(confirmEmailDto.Email) || string.IsNullOrEmpty(confirmEmailDto.Token))
-                return new AuthResponseModel { IsConfirmed = false, Message = "User ID and token are required." };
+            {
+                _logger.LogError("Email and token are required.");
+                throw new InvalidEmailOrTokenException("Email and token are required."); 
+            }
 
             var user = await _userManager.FindByEmailAsync(confirmEmailDto.Email);
             if (user == null || user.IsDeleted)
-                return new AuthResponseModel { IsConfirmed = false, Message = "User not found." };
+            {
+                _logger.LogError("User not found.");
+                throw new UserNotFoundException("User not found.");
+            }
+                
+
             if (user.EmailConfirmed)
-                return new AuthResponseModel { Message = "Your Email is already confirmed" };
+            {
+                _logger.LogWarning("Your email is already confirmed.");
+                throw new EmailAlreadyConfirmedException("Your email has been confirmed successfully.");
+            }
+                
+
             var result = await _userManager.ConfirmEmailAsync(user, confirmEmailDto.Token);
             if (!result.Succeeded)
-                return new AuthResponseModel { IsConfirmed = false, Message = "Token is not valid!" };
+            {
+                _logger.LogError("Token is not valid.");
+                throw new InvalidTokenException("Token is not valid.");
+            }
 
-            return new AuthResponseModel { IsConfirmed = true, Message = "Your Email has been confirmed successfully :) " };
+            _logger.LogInformation("Your email has been confirmed.");
         }
 
-        public async Task<AuthResponseModel> ResendEmailConfirmationTokenAsync(string Email)
+        public async Task ResendEmailConfirmationTokenAsync(string Email)
         {
+            if (string.IsNullOrWhiteSpace(Email))
+            {
+                _logger.LogError("Email is required.");
+                throw new InvalidEmailOrTokenException("Email is required.");
+            }
+                
+
             var user = await _userManager.FindByEmailAsync(Email);
             if (user == null || user.IsDeleted)
-                return new AuthResponseModel { IsConfirmed = false, Message = "User not found." };
+            {
+                _logger.LogError("User not found.");
+                throw new UserNotFoundException("User not found.");
+            }
+                
 
             if (await _userManager.IsEmailConfirmedAsync(user))
-                return new AuthResponseModel { IsConfirmed = true, Message = "Email is already confirmed." };
+            {
+                _logger.LogWarning("Your email is already confirmed.");
+                throw new EmailAlreadyConfirmedException("Email is already confirmed.");
+            }
+                
 
             // Generate new token
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -76,7 +111,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             await SendEmailAsync(user.Email, "Email Verification Code",
                 $"Hello {user.UserName}, Use this new token to verify your Email: {token}\n This code is Valid only for {expirationTime} Minutes.");
 
-            return new AuthResponseModel { IsConfirmed = false, Message = "A new verification email has been sent." };
         }
     }
 }

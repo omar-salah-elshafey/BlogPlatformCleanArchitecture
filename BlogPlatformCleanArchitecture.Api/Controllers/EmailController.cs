@@ -20,31 +20,16 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         [HttpPost("confirm-email")]
         public async Task<IActionResult> VerifyEmail(ConfirmEmailDto confirmEmailDto)
         {
-            // Validate the input fields (UserName and token)
-            if (string.IsNullOrEmpty(confirmEmailDto.Email) || string.IsNullOrEmpty(confirmEmailDto.Token))
-                return BadRequest(new { Message = "User ID and token are required." });
+            await _emailService.VerifyEmail(confirmEmailDto);
 
-            // Call the service to verify the email
-            var result = await _emailService.VerifyEmail(confirmEmailDto);
-
-            // Check if the verification failed
-            if (!result.IsConfirmed)
-                return BadRequest(new { result.Message });
-
-            // Return a success response
-            return Ok(new
-            {
-                result.Message,
-                result.IsConfirmed
-            });
+            return Ok(new { Message = "Your email has been confirmed successfully." });
         }
 
         [HttpPost("resend-confirmation-email")]
-        public async Task<IActionResult> ResendConfirmationEmail(string UserName)
+        public async Task<IActionResult> ResendConfirmationEmail(string Email)
         {
-            var result = await _emailService.ResendEmailConfirmationTokenAsync(UserName);
-
-            return Ok(result.Message);
+            await _emailService.ResendEmailConfirmationTokenAsync(Email);
+            return Ok(new { Message = "A new verification email has been sent." });
         }
     }
 }
