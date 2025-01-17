@@ -31,6 +31,24 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             return Ok(users);
         }
 
+        [HttpGet("get-current-user-profile")]
+        [Authorize]
+        public async Task<IActionResult> GetCurrentUserProfileAsync()
+        {
+            var userProfile = await _userManagementService.GetUserProfileAsync();
+
+            return Ok(userProfile);
+        }
+
+        [Authorize]
+        [HttpGet("search-users")]
+        public async Task<IActionResult> SearchUsers([FromQuery] string query)
+        {
+            var users = await _userManagementService.SearchUsersAsync(query);
+            return Ok(users);
+        }
+
+
         [HttpPut("change-role")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddRoleAsync(ChangeUserRoleDto changeUserRoleDto)

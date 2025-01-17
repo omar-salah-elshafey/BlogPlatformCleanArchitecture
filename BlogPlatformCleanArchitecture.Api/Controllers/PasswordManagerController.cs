@@ -11,9 +11,12 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
     public class PasswordManagerController : ControllerBase
     {
         private readonly IPasswordManagementService _passwordManagementService;
-        public PasswordManagerController(IPasswordManagementService passwordManagementService)
+        private readonly ILogger<PasswordManagerController> _logger;
+        public PasswordManagerController(IPasswordManagementService passwordManagementService, 
+            ILogger<PasswordManagerController> logger)
         {
             _passwordManagementService = passwordManagementService;
+            _logger = logger;
         }
 
         [HttpPut("reset-password")]
@@ -21,8 +24,8 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var result = await _passwordManagementService.ResetPasswordAsync(resetPasswordDto);
-            return Ok(result);
+            await _passwordManagementService.ResetPasswordAsync(resetPasswordDto);
+            return Ok(new { Message = "Your password has been reset successfully." });
         }
 
         [HttpPut("change-password")]
@@ -31,31 +34,29 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var result = await _passwordManagementService.ChangePasswordAsync(changePasswordDto);
-            return Ok(result);
+            await _passwordManagementService.ChangePasswordAsync(changePasswordDto);
+            return Ok(new { Message = "Your password has been Changed successfully." });
         }
 
         [HttpPost("reset-password-request")]
         public async Task<IActionResult> ResetPasswordRequestAsync(string email)
         {
+            _logger.LogError("This is from the full"+email);
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var result = await _passwordManagementService.ResetPasswordRequestAsync(email);
-            return Ok(result);
+            await _passwordManagementService.ResetPasswordRequestAsync(email);
+            return Ok(new { Message = "A Password Reset Code has been sent to your Email!" });
         }
 
         [HttpPost("verify-password-reset-token")]
-        public async Task<IActionResult> VerifyResetPasswordRequestAsync(ConfirmEmailDto confirmEmailDto)
+        public async Task<IActionResult> VerifyResetPasswordTokenAsync(ConfirmEmailDto confirmEmailDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
             // Call the service to verify the email
-            var result = await _passwordManagementService.VerifyResetPasswordRequestAsync(confirmEmailDto);
+            await _passwordManagementService.VerifyResetPasswordTokenAsync(confirmEmailDto);
 
-            // Check if the verification failed
-            if (!result.IsRequestVerified)
-                return BadRequest(result.Message);
-            return Ok(result);
+            return Ok(new { Message = "Your Password reset request is verified." });
         }
     }
 }

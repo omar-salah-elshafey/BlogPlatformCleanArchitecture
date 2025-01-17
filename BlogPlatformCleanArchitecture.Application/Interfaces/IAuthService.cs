@@ -7,6 +7,6 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
     {
         Task<AuthResponseModel> RegisterUserAsync(RegistrationDto registrationDto, string role);
         Task<AuthResponseModel> LoginAsync(LoginDto loginDto);
-        Task<bool> LogoutAsync(string refreshToken, string userId);
+        Task<bool> LogoutAsync(string refreshToken);
     }
 }

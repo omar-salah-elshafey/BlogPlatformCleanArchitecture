@@ -12,6 +12,7 @@ using BlogPlatformCleanArchitecture.Application.Configurations;
 using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
+using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -35,9 +36,13 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 roleClaims.Add(new Claim("roles", role));
 
             var claims = new Claim[] {
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.Name, user.UserName),
+                new Claim(ClaimTypes.Name, user.UserName)
             }.Union(userClaim).Union(roleClaims);
 
             var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.SigningKey)),
@@ -57,18 +62,10 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             var authResponseModel = new AuthResponseModel();
             var user = await _userManager.Users.SingleOrDefaultAsync(u => u.RefreshTokens.Any(t => t.Token == token));
             if (user == null)
-            {
-                authResponseModel.IsAuthenticated = false;
-                authResponseModel.Message = "Invalid Token!";
-                return authResponseModel;
-            }
+                throw new InvalidTokenException("Invalid Token!");
             var refreshToken = user.RefreshTokens.Single(t => t.Token == token);
             if (!refreshToken.IsActive)
-            {
-                authResponseModel.IsAuthenticated = false;
-                authResponseModel.Message = "Inactive Token!";
-                return authResponseModel;
-            }
+                throw new InvalidTokenException("Invalid Token!");
             // Revoke current refresh token
             refreshToken.RevokedOn = DateTime.UtcNow.ToLocalTime();
             var newRefreshToken = await GenerateRefreshToken();
@@ -87,36 +84,29 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             return authResponseModel;
         }
 
-        public async Task<bool> RevokeRefreshTokenAsync(string token)
+        public async Task RevokeRefreshTokenAsync(string token)
         {
-            // Find user by refresh token
-            var user = await _userManager.Users.SingleOrDefaultAsync(u => u.RefreshTokens.Any(t => t.Token == token));
-            // Return false if user not found
+            _logger.LogError("refff: "+token);
+            var user = await _userManager.Users.Include(u => u.RefreshTokens)
+                .SingleOrDefaultAsync(u => u.RefreshTokens.Any(t => t.Token == token));
+            _logger.LogError("user: " +  user.UserName);
             if (user == null)
-            {
-                _logger.LogInformation("Token revocation failed: user not found.");
-                return false;
-            }
-            // Get the refresh token
+                throw new InvalidTokenException("Token revocation failed: user not found.");
+            
             var refreshToken = user.RefreshTokens.SingleOrDefault(t => t.Token == token);
-            // Return false if token is inactive (already revoked or expired)
+            
             if (!refreshToken.IsActive)
-            {
-                _logger.LogInformation($"Token revocation failed: token already inactive for user {user.UserName}");
-                return false;
-            }
-            // Revoke the refresh token
+                throw new InvalidTokenException($"Token revocation failed: token already inactive for user {user.UserName}");
+            
             refreshToken.RevokedOn = DateTime.UtcNow.ToLocalTime();
-            // Update user with revoked token
+            
             var result = await _userManager.UpdateAsync(user);
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                _logger.LogInformation($"Token revoked successfully for user {user.UserName} at {DateTime.UtcNow.ToLocalTime()}");
-                return true;
+                _logger.LogError($"Token revocation failed for user {user.UserName} due to update failure.");
+                throw new Exception("Failed to update user after token removal.");
             }
-            // Log and return false if update fails
-            _logger.LogError($"Token revocation failed for user {user.UserName} due to update failure.");
-            return false;
+            _logger.LogInformation($"Token revoked successfully for user {user.UserName} at {DateTime.UtcNow.ToLocalTime()}");
         }
 
 

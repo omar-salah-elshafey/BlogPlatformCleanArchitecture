@@ -4,6 +4,8 @@ using BlogPlatformCleanArchitecture.Application.DTOs;
 using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
+using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
+using Microsoft.Extensions.Logging;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -12,50 +14,69 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEmailService _emailService;
         private readonly IOptions<DataProtectionTokenProviderOptions> _tokenProviderOptions;
+        private readonly ILogger<PasswordManagementService> _logger;
 
-        public PasswordManagementService(UserManager<ApplicationUser> userManager, IEmailService emailService, 
-            IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions)
+        public PasswordManagementService(UserManager<ApplicationUser> userManager, IEmailService emailService,
+            IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions, ILogger<PasswordManagementService> logger)
         {
             _userManager = userManager;
             _emailService = emailService;
             _tokenProviderOptions = tokenProviderOptions;
+            _logger = logger;
         }
 
-        public async Task<string> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
+        public async Task ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
         {
             var user = await _userManager.FindByEmailAsync(resetPasswordDto.Email);
             if (user == null || user.IsDeleted)
-                return "Email is incorrect!";
+            {
+                _logger.LogError("User not found, Email is incorrect!");
+                throw new UserNotFoundException("User not found, Email is incorrect!");
+            }
+                
 
             var result = await _userManager.ResetPasswordAsync(user, resetPasswordDto.Token, resetPasswordDto.NewPassword);
             if (!result.Succeeded)
-                return "Invalid token!";
+            {
+                _logger.LogWarning("Token is not valid.");
+                throw new InvalidTokenException("Token is not valid.");
+            }
+                
 
-            return "Your password has been reset successfully.";
+            _logger.LogInformation("Your password has been reset successfully.");
         }
 
-        public async Task<string> ChangePasswordAsync(ChangePasswordDto changePasswordDto)
+        public async Task ChangePasswordAsync(ChangePasswordDto changePasswordDto)
         {
             var user = await _userManager.FindByEmailAsync(changePasswordDto.Email);
             if (user == null || user.IsDeleted)
-                return "Email is incorrect!";
+            {
+                _logger.LogWarning("User not found, Email is incorrect!");
+                throw new UserNotFoundException("User not found, Email is incorrect!");
+            }
 
             if (changePasswordDto.CurrentPassword.Equals(changePasswordDto.NewPassword))
-                return "New and old password cannot be the same!" ;
+            {
+                _logger.LogWarning("New and old password cannot be the same!");
+                throw new InvalidCredentialsException("New and old password cannot be the same!");
+            }
 
             var result = await _userManager.ChangePasswordAsync(user, 
                 changePasswordDto.CurrentPassword, changePasswordDto.NewPassword);
             if (!result.Succeeded)
-                return "An error occurred while changing the password!" ;
+                throw new Exception("An error occurred while changing the password!");
 
-            return "Your password has been updated successfully." ;
+            _logger.LogInformation("Your password has been updated successfully.") ;
         }
 
-        public async Task<string> ResetPasswordRequestAsync(string email)
+        public async Task ResetPasswordRequestAsync(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
             if (user is null || user.IsDeleted)
-                return "The Email you Provided is not Correct!" ;
+            {
+                _logger.LogWarning("User not found, Email is incorrect!");
+                throw new UserNotFoundException("User not found, Email is incorrect!");
+            }
             //generating the token to verify the user's email
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
@@ -64,24 +85,26 @@ namespace BlogPlatformCleanArchitecture.Application.Services
 
             await _emailService.SendEmailAsync(email, "Password Reset Code.",
                 $"Hello {user.UserName}, Use this new token to Reset your Password: {token}\n This code is Valid only for {expirationTime} Minutes.");
-            return "A Password Reset Code has been sent to your Email!" ;
+            _logger.LogInformation("A Password Reset Code has been sent to your Email!");
         }
 
-        public async Task<ResetPasswordResponseModel> VerifyResetPasswordRequestAsync(ConfirmEmailDto confirmEmailDto)
+        public async Task VerifyResetPasswordTokenAsync(ConfirmEmailDto confirmEmailDto)
         {
             var user = await _userManager.FindByEmailAsync(confirmEmailDto.Email);
             if (user == null || user.IsDeleted)
-                return new ResetPasswordResponseModel { IsRequestVerified = false, Message = "User not found." };
+            {
+                _logger.LogWarning("User not found, Email is incorrect!");
+                throw new UserNotFoundException("User not found, Email is incorrect!");
+            }
             var result = await _userManager.VerifyUserTokenAsync(user, 
                 _userManager.Options.Tokens.PasswordResetTokenProvider, "ResetPassword", confirmEmailDto.Token);
             if (!result)
-                return new ResetPasswordResponseModel { IsRequestVerified = false, Message = "Token is not valid!" };
-
-            return new ResetPasswordResponseModel 
             {
-                IsRequestVerified = true, 
-                Message = "Your Password reset request is verified." 
-            };
+                _logger.LogWarning("Token is not valid.");
+                throw new InvalidTokenException("Token is not valid.");
+            }
+
+            _logger.LogInformation("Your Password reset request is verified.");
         }
     }
 }

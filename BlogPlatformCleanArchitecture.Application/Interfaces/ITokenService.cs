@@ -8,7 +8,7 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
     {
         Task<JwtSecurityToken> CreateJwtTokenAsync(ApplicationUser user);
         Task<AuthResponseModel> RefreshTokenAsync(string token);
-        Task<bool> RevokeRefreshTokenAsync(string token);
+        Task RevokeRefreshTokenAsync(string token);
         Task<RefreshToken> GenerateRefreshToken();
     }
 }

@@ -4,7 +4,9 @@ using BlogPlatformCleanArchitecture.Application.DTOs;
 using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
-using Org.BouncyCastle.Asn1.Ocsp;
+using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -13,12 +15,16 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private IAuthService _authService;
-        public UserManagementService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, 
-            IAuthService authService)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<UserManagementService> _logger;
+        public UserManagementService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
+            IAuthService authService, IHttpContextAccessor httpContextAccessor, ILogger<UserManagementService> logger)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _authService = authService;
+            _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
 
         public async Task<List<UserDto>> GetUSersAsync()
@@ -42,6 +48,54 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             }
             return userDtos;
         }
+
+        public async Task<UserDto> GetUserProfileAsync()
+        {
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var userName = userClaims!.Identity?.Name;
+            if (string.IsNullOrEmpty(userName))
+                throw new Exception("User ID claim not found.");
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null || user.IsDeleted)
+                throw new UserNotFoundException("User Not Found!");
+            var role = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
+            return new UserDto
+            {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                UserName = user.UserName,
+                Email = user.Email,
+                Role = role
+            };
+        }
+
+        public async Task<List<UserDto>> SearchUsersAsync(string searchQuery)
+        {
+            var normalizedSearchQuery = searchQuery.ToLower();
+            if (string.IsNullOrWhiteSpace(searchQuery))
+                throw new NullOrWhiteSpaceInputException("Search query cannot be empty.");
+
+            var users = await _userManager.Users
+                .Where(user => !user.IsDeleted && user.UserName!.ToLower().Contains(normalizedSearchQuery))
+                .ToListAsync();
+
+            var userDtos = new List<UserDto>();
+            foreach (var user in users)
+            {
+                var role = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
+                userDtos.Add(new UserDto
+                {
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    Role = role,
+                });
+            }
+
+            return userDtos;
+        }
+
 
         public async Task<string> ChangeRoleAsync(ChangeUserRoleDto changeRoleDto)
         {
@@ -70,7 +124,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (!result.Succeeded)
                 return $"An Error Occured while Deleting the user{UserName}" ;
             if (UserName == CurrentUserName)
-                await _authService.LogoutAsync(refreshToken, user.Id);
+                await _authService.LogoutAsync(refreshToken);
             return $"User with UserName: '{UserName}' has been Deleted successfully" ;
         }
 

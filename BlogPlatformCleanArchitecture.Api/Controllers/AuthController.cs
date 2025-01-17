@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.RegularExpressions;
 
 namespace BlogPlatformCleanArchitecture.Api.Controllers
 {
@@ -16,13 +17,15 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITokenService _tokenService;
         private readonly ICookieService _cookieService;
+        private readonly ILogger<AuthController> _logger;
         public AuthController(IAuthService authService, UserManager<ApplicationUser> userManager,
-            ITokenService tokenService, ICookieService cookieService)
+            ITokenService tokenService, ICookieService cookieService, ILogger<AuthController> logger)
         {
             _authService = authService;
             _userManager = userManager;
             _tokenService = tokenService;
             _cookieService = cookieService;
+            _logger = logger;
         }
 
         [HttpPost("register-reader")]
@@ -107,15 +110,24 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
 
         [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> Logout(string refreshToken)
         {
-            var refreshToken = Request.Cookies["refreshToken"];
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            //var refreshToken = Request.Cookies["refreshToken"];
+            _logger.LogError("This is the token from the frontEnd: " + refreshToken);
+            
+            if (refreshToken is null)
+                throw new ArgumentNullException(nameof(refreshToken));
+            _logger.LogError("This is the token from the frontEnd: " + refreshToken);
+            refreshToken = Regex.Replace(refreshToken, @"\s+", "");
+            _logger.LogError("This is the token from the frontEnd: " + refreshToken);
             var userId = Request.Cookies["userId"];
             var userName = Request.Cookies["UserName"];
-            var result = await _authService.LogoutAsync(refreshToken, userId);
+            var result = await _authService.LogoutAsync(refreshToken);
             if (!result)
                 return BadRequest(result);
-            return Ok("Successfully logged out");
+            return Ok(new {message= "Successfully logged out" });
         }
 
         [HttpGet("refreshtoken")]

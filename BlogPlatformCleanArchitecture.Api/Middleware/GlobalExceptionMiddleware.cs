@@ -37,12 +37,6 @@ namespace BlogPlatformCleanArchitecture.Api.Middleware
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 await context.Response.WriteAsJsonAsync(new { error = ex.Message });
             }
-            catch (Application.ExceptionHandling.UnauthorizedAccessException ex)
-            {
-                _logger.LogWarning($"Unauthorized access error: {ex.Message}");
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                await context.Response.WriteAsJsonAsync(new { error = ex.Message });
-            }
             catch (InvalidCredentialsException ex)
             {
                 _logger.LogWarning($"Login failed: {ex.Message}");
@@ -51,7 +45,7 @@ namespace BlogPlatformCleanArchitecture.Api.Middleware
             }
             catch (UserNotFoundException ex)
             {
-                _logger.LogWarning($"Login failed: {ex.Message}");
+                _logger.LogWarning($"User not found: {ex.Message}");
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
                 await context.Response.WriteAsJsonAsync(new { error = ex.Message });
             }
@@ -78,6 +72,12 @@ namespace BlogPlatformCleanArchitecture.Api.Middleware
                 _logger.LogWarning($"Invalid token: {ex.Message}");
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+            }
+            catch (NullOrWhiteSpaceInputException ex)
+            { 
+                _logger.LogWarning($"Invalid input: {ex.Message}"); 
+                context.Response.StatusCode = StatusCodes.Status400BadRequest; 
+                await context.Response.WriteAsJsonAsync(new { error = ex.Message }); 
             }
             catch (Exception ex)
             {

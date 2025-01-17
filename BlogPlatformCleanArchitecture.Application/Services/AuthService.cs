@@ -7,6 +7,8 @@ using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -19,9 +21,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public readonly ITokenService _tokenService;
         private readonly ILogger<AuthService> _logger;
         private readonly ICookieService _cookieService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         public AuthService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
             IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions, IEmailService emailService,
-            ITokenService tokenService, ILogger<AuthService> logger, ICookieService cookieService)
+            ITokenService tokenService, ILogger<AuthService> logger, ICookieService cookieService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -30,6 +34,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _tokenService = tokenService;
             _logger = logger;
             _cookieService = cookieService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<AuthResponseModel> RegisterUserAsync(RegistrationDto registrationDto, string role)
@@ -128,17 +133,17 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             return authResponseModel;
         }
 
-        public async Task<bool> LogoutAsync(string refreshToken, string userId)
+        public async Task<bool> LogoutAsync(string refreshToken)
         {
+            refreshToken = Uri.UnescapeDataString(refreshToken); // Decode the token
+            _logger.LogError("Decoded Token: " + refreshToken);
             // Revoke the refresh token
-            var result = await _tokenService.RevokeRefreshTokenAsync(refreshToken);
-            var user = await _userManager.FindByIdAsync(userId);
-            if (!result)
-            {
-                _logger.LogInformation("Failed to revoke token during logout.");
-                return false;
-            }
-            user.IsActive = false;
+            await _tokenService.RevokeRefreshTokenAsync(refreshToken);
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var userId = userClaims!.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _userManager.FindByIdAsync(userId!);
+            _logger.LogInformation($"{userId} for user {user.UserName}");
+            user!.IsActive = false;
             await _userManager.UpdateAsync(user);
             _logger.LogInformation("User logged out successfully.");
             _cookieService.RemoveFromCookies("refreshToken");

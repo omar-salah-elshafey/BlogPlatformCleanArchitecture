@@ -17,6 +17,8 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.DependencyInjection
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnections")));
 
+            services.AddHttpContextAccessor();
+
             // Register repositories if you have any, e.g., IUserRepository
             // services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPostRepository, PostRepository>();
