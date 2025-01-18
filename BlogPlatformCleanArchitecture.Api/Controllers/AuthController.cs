@@ -110,17 +110,15 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
 
         [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> Logout(string refreshToken)
+        public async Task<IActionResult> Logout(string? refreshToken)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            //var refreshToken = Request.Cookies["refreshToken"];
-            _logger.LogError("This is the token from the frontEnd: " + refreshToken);
             
             if (refreshToken is null)
-                throw new ArgumentNullException(nameof(refreshToken));
-            _logger.LogError("This is the token from the frontEnd: " + refreshToken);
-            refreshToken = Regex.Replace(refreshToken, @"\s+", "");
+            {
+                refreshToken = Request.Cookies["refreshToken"];
+            }
             _logger.LogError("This is the token from the frontEnd: " + refreshToken);
             var userId = Request.Cookies["userId"];
             var userName = Request.Cookies["UserName"];
@@ -131,10 +129,16 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpGet("refreshtoken")]
-        public async Task<IActionResult> RefreshToken()
+        public async Task<IActionResult> RefreshToken(string? refreshToken)
         {
-            var refreshToken = Request.Cookies["refreshToken"];
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
+            if (refreshToken is null)
+            {
+                refreshToken = Request.Cookies["refreshToken"];
+            }
+            _logger.LogError("This is the token from the frontEnd: " + refreshToken);
             var result = await _tokenService.RefreshTokenAsync(refreshToken);
 
             if (!result.IsAuthenticated)

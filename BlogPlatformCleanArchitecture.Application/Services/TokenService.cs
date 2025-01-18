@@ -13,6 +13,7 @@ using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
+using System.Text.RegularExpressions;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -60,12 +61,17 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<AuthResponseModel> RefreshTokenAsync(string token)
         {
             var authResponseModel = new AuthResponseModel();
-            var user = await _userManager.Users.SingleOrDefaultAsync(u => u.RefreshTokens.Any(t => t.Token == token));
+            token = Uri.UnescapeDataString(token); // Decode the token
+            token = Regex.Replace(token, @"\s+", "+");
+            _logger.LogError("Decoded Token: " + token);
+            var user = await _userManager.Users.Include(u => u.RefreshTokens)
+                .SingleOrDefaultAsync(u => u.RefreshTokens.Any(t => t.Token == token));
+            _logger.LogError("user: " + user.UserName);
             if (user == null)
-                throw new InvalidTokenException("Invalid Token!");
+                throw new InvalidTokenException("Invalid Token! user null");
             var refreshToken = user.RefreshTokens.Single(t => t.Token == token);
             if (!refreshToken.IsActive)
-                throw new InvalidTokenException("Invalid Token!");
+                throw new InvalidTokenException("Invalid Token! inactive token");
             // Revoke current refresh token
             refreshToken.RevokedOn = DateTime.UtcNow.ToLocalTime();
             var newRefreshToken = await GenerateRefreshToken();

@@ -9,6 +9,7 @@ using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -136,7 +137,9 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<bool> LogoutAsync(string refreshToken)
         {
             refreshToken = Uri.UnescapeDataString(refreshToken); // Decode the token
+            refreshToken = Regex.Replace(refreshToken, @"\s+", "+");
             _logger.LogError("Decoded Token: " + refreshToken);
+
             // Revoke the refresh token
             await _tokenService.RevokeRefreshTokenAsync(refreshToken);
             var userClaims = _httpContextAccessor.HttpContext?.User;

@@ -79,6 +79,12 @@ namespace BlogPlatformCleanArchitecture.Api.Middleware
                 context.Response.StatusCode = StatusCodes.Status400BadRequest; 
                 await context.Response.WriteAsJsonAsync(new { error = ex.Message }); 
             }
+            catch (Application.ExceptionHandling.UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning($"Unauthorized access error: {ex.Message}");
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError($"Unexpected error: {ex.Message}");

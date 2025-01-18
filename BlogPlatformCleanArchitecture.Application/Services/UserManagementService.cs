@@ -7,6 +7,7 @@ using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using UnauthorizedAccessException = BlogPlatformCleanArchitecture.Application.ExceptionHandling.UnauthorizedAccessException;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -132,15 +133,25 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var user = await _userManager.FindByNameAsync(updateUserDto.UserName);
             if (user is null || user.IsDeleted == true)
-                return new UpdateUserResponseModel { Message = $"User with UserName: {updateUserDto.UserName} isn't found!" };
+                throw new UserNotFoundException($"User with UserName: {updateUserDto.UserName} isn't found!");
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var currentUserName = userClaims!.Identity?.Name;
+            var currentUser = await _userManager.FindByNameAsync(currentUserName!);
+            var isAdmin = await _userManager.IsInRoleAsync(currentUser!, "Admin");
+            if (!currentUserName!.Equals(updateUserDto.UserName) && !isAdmin)
+            {
+                _logger.LogError("You aren't Authorized to do this Action!");
+                throw new UnauthorizedAccessException("You aren't Authorized to do this Action!");
+            }
             user.FirstName = updateUserDto.FirstName;
             user.LastName = updateUserDto.LastName;
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
             {
                 var errors = string.Join(Environment.NewLine, result.Errors.Select(e => e.Description));
-                return new UpdateUserResponseModel { Message = $"Failed to update user: {errors}" };
+                throw new Exception($"Failed to update user: {errors}");
             }
+            _logger.LogInformation("User has been updated Successfully.");
             return new UpdateUserResponseModel
             {
                 UserName = updateUserDto.UserName,
