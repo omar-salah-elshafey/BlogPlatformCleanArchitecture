@@ -9,7 +9,7 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
         Task<UserDto> GetUserProfileAsync();
         Task<List<UserDto>> SearchUsersAsync(string searchQuery);
         Task<string> ChangeRoleAsync(ChangeUserRoleDto changeRoleDto);
-        Task<string> DeleteUserAsync(string UserName, string CurrentUserName, string refreshToken);
+        Task DeleteUserAsync(string UserName, string refreshToken);
         Task<UpdateUserResponseModel> UpdateUserAsync(UpdateUserDto updateUserDto);
     }
 }

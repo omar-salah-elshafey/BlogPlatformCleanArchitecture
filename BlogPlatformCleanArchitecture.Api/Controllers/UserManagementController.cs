@@ -62,14 +62,15 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
 
         [HttpDelete("delete-user")]
         [Authorize]
-        public async Task<IActionResult> DeleteUserAsync(string UserName)
+        public async Task<IActionResult> DeleteUserAsync(string UserName, string? refreshToken)
         {
             var CurrentUserName = Request.Cookies["UserName"];
-            var refreshToken = Request.Cookies["refreshToken"];
+            if(refreshToken == null)
+                refreshToken = Request.Cookies["refreshToken"];
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var result = await _userManagementService.DeleteUserAsync(UserName, CurrentUserName, refreshToken);
-            return Ok(result);
+            await _userManagementService.DeleteUserAsync(UserName, refreshToken);
+            return Ok(new {message= $"User with UserName: '{UserName}' has been Deleted successfully" });
         }
 
         [HttpPut("update-user")]

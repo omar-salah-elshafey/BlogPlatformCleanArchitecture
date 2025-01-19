@@ -66,7 +66,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _logger.LogError("Decoded Token: " + token);
             var user = await _userManager.Users.Include(u => u.RefreshTokens)
                 .SingleOrDefaultAsync(u => u.RefreshTokens.Any(t => t.Token == token));
-            _logger.LogError("user: " + user.UserName);
             if (user == null)
                 throw new InvalidTokenException("Invalid Token! user null");
             var refreshToken = user.RefreshTokens.Single(t => t.Token == token);

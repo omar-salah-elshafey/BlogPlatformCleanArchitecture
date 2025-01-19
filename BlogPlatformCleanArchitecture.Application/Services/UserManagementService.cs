@@ -111,22 +111,27 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             return $"User {changeRoleDto.UserName} has been assignd to Role {changeRoleDto.Role} Successfully :)";
         }
 
-        public async Task<string> DeleteUserAsync(string UserName, string CurrentUserName, string refreshToken)
+        public async Task DeleteUserAsync(string UserName, string refreshToken)
         {
+            _logger.LogWarning(UserName);
+            _logger.LogWarning(refreshToken);
             var user = await _userManager.FindByNameAsync(UserName);
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var CurrentUserName = userClaims!.Identity?.Name;
             var currentUser = await _userManager.FindByNameAsync(CurrentUserName);
             var role = (await _userManager.GetRolesAsync(currentUser)).First().ToUpper();
             if (user is null || user.IsDeleted)
-                return $"User with UserName: {UserName} isn't found!";
+                throw new UserNotFoundException("User Not Found!");
             if (!CurrentUserName.Equals(UserName) && role != "ADMIN")
-                return $"You Are Not Allowed to perform this action!";
+                throw new UnauthorizedAccessException("You aren't Authorized to do this action!");
+            _logger.LogWarning(CurrentUserName);
+            _logger.LogWarning(currentUser.ToString());
             user.IsDeleted = true;
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
-                return $"An Error Occured while Deleting the user{UserName}" ;
+                throw new Exception($"An Error Occured while Deleting the user{UserName}");
             if (UserName == CurrentUserName)
                 await _authService.LogoutAsync(refreshToken);
-            return $"User with UserName: '{UserName}' has been Deleted successfully" ;
         }
 
         public async Task<UpdateUserResponseModel> UpdateUserAsync(UpdateUserDto updateUserDto)
