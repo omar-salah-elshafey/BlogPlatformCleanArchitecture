@@ -14,11 +14,14 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUserManagementService _userManagementService;
-        public UserManagementController(UserManager<ApplicationUser> userManager, 
-            IUserManagementService userManagementService)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public UserManagementController(UserManager<ApplicationUser> userManager,
+            IUserManagementService userManagementService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _userManager = userManager;
             _userManagementService = userManagementService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpGet("get-users")]
@@ -35,7 +38,18 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         [Authorize]
         public async Task<IActionResult> GetCurrentUserProfileAsync()
         {
-            var userProfile = await _userManagementService.GetUserProfileAsync();
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var userName = userClaims!.Identity?.Name;
+            var userProfile = await _userManagementService.GetUserProfileAsync(userName);
+
+            return Ok(userProfile);
+        }
+
+        [HttpGet("get-user-profile")]
+        [Authorize]
+        public async Task<IActionResult> GetUserProfileAsync(string userName)
+        {
+            var userProfile = await _userManagementService.GetUserProfileAsync(userName);
 
             return Ok(userProfile);
         }

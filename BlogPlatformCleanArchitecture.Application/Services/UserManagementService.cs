@@ -50,12 +50,10 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             return userDtos;
         }
 
-        public async Task<UserDto> GetUserProfileAsync()
+        public async Task<UserDto> GetUserProfileAsync(string userName)
         {
-            var userClaims = _httpContextAccessor.HttpContext?.User;
-            var userName = userClaims!.Identity?.Name;
             if (string.IsNullOrEmpty(userName))
-                throw new Exception("User ID claim not found.");
+                throw new NullOrWhiteSpaceInputException("UserName can't be null!");
             var user = await _userManager.FindByNameAsync(userName);
             if (user == null || user.IsDeleted)
                 throw new UserNotFoundException("User Not Found!");
@@ -72,7 +70,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
 
         public async Task<List<UserDto>> SearchUsersAsync(string searchQuery)
         {
-            var normalizedSearchQuery = searchQuery.ToLower();
+            var normalizedSearchQuery = searchQuery.Trim().ToLower();
             if (string.IsNullOrWhiteSpace(searchQuery))
                 throw new NullOrWhiteSpaceInputException("Search query cannot be empty.");
 

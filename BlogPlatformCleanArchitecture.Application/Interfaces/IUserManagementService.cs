@@ -6,7 +6,7 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
     public interface IUserManagementService
     {
         Task<List<UserDto>> GetUSersAsync();
-        Task<UserDto> GetUserProfileAsync();
+        Task<UserDto> GetUserProfileAsync(string userName);
         Task<List<UserDto>> SearchUsersAsync(string searchQuery);
         Task<string> ChangeRoleAsync(ChangeUserRoleDto changeRoleDto);
         Task DeleteUserAsync(string UserName, string refreshToken);
