@@ -1,4 +1,5 @@
 ﻿using BlogPlatformCleanArchitecture.Application.DTOs;
+using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
 using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories;
 using BlogPlatformCleanArchitecture.Application.Models;
@@ -29,12 +30,14 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = p.Content,
                 CreatedDate = p.CreatedDate,
                 ModifiedDate = p.ModifiedDate,
-                Comments = p.Comments.Select(c => new PostCommentsModel
-                {
-                    UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
-                    Content = c.Content,
-                    CreatedDate = c.CreatedDate
-                }).ToList()
+                Comments = p.Comments
+                .Where(c => !c.IsDeleted)
+                .Select(c => new PostCommentsModel
+                    {
+                        UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
+                        Content = c.Content,
+                        CreatedDate = c.CreatedDate
+                    }).ToList()
             });
         }
 
@@ -42,7 +45,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var post = await _postRepository.GetPostByIdAsync(id);
             if (post == null)
-                return null;
+                throw new UserNotFoundException("Post Not Found!");
+
             return new PostResponseModel
             {
                 Id = post.Id,
@@ -51,19 +55,21 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = post.Content,
                 CreatedDate = post.CreatedDate,
                 ModifiedDate = post.ModifiedDate,
-                Comments = post.Comments.Select(c => new PostCommentsModel
-                {
-                    UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
-                    Content = c.Content,
-                    CreatedDate = c.CreatedDate
-                }).ToList()
+                Comments = post.Comments
+                .Where(c => !c.IsDeleted)
+                .Select(c => new PostCommentsModel
+                    {
+                        UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
+                        Content = c.Content,
+                        CreatedDate = c.CreatedDate
+                    }).ToList()
             };
         }
 
         public async Task<IEnumerable<PostResponseModel>> GetPostsByUserAsync(string userName)
         {
             var user = await _userManager.FindByNameAsync(userName);
-            if (user == null || user.IsDeleted) return null;
+            if (user == null || user.IsDeleted) throw new UserNotFoundException("User Not Found!");
             var posts = await _postRepository.GetPostsByUserAsync(userName);
             return posts.Select(p => new PostResponseModel
             {
@@ -73,12 +79,14 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = p.Content,
                 CreatedDate = p.CreatedDate,
                 ModifiedDate = p.ModifiedDate,
-                Comments = p.Comments.Select(c => new PostCommentsModel
-                {
-                    UserName = c.User.UserName,
-                    Content = c.Content,
-                    CreatedDate = c.CreatedDate
-                }).ToList()
+                Comments = p.Comments
+                .Where(c => !c.IsDeleted)
+                .Select(c => new PostCommentsModel
+                    {
+                        UserName = c.User.UserName,
+                        Content = c.Content,
+                        CreatedDate = c.CreatedDate
+                    }).ToList()
             });
         }
 

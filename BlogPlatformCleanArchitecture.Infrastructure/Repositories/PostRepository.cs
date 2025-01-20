@@ -22,7 +22,8 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
             return await _context.Posts
                 .Where(p => !p.IsDeleted)
                 .Include(p => p.Author)
-                .Include(p => p.Comments.Where(c => !c.IsDeleted))
+                .Include(p => p.Comments)
+                .ThenInclude(c => c.User)
                 .ToListAsync();
         }
 
@@ -31,7 +32,8 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
             return await _context.Posts
                 .Where(p => !p.IsDeleted && p.Id == id )
                 .Include(p => p.Author)
-                .Include(p => p.Comments.Where(c => !c.IsDeleted))
+                .Include(p => p.Comments)
+                .ThenInclude(c => c.User)
                 .FirstOrDefaultAsync();
         }
 
@@ -40,7 +42,8 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
             return await _context.Posts
                 .Where(p => !p.IsDeleted && p.Author.UserName == userName)
                 .Include(p => p.Author)
-                .Include(p => p.Comments.Where(c => !c.IsDeleted))
+                .Include(p => p.Comments)
+                .ThenInclude(c => c.User)
                 .ToListAsync();
         }
 

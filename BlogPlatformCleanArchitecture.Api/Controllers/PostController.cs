@@ -43,7 +43,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         public async Task<IActionResult> GetPostsByUserAsync(string UserName)
         {
             var posts = await _postService.GetPostsByUserAsync(UserName);
-            if (posts == null) return NotFound(string.Empty);
             return Ok(posts);
         }
 
@@ -51,7 +50,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         public async Task<IActionResult> GetPostByIdAsync(int id)
         {
             var post = await _postService.GetPostByIdAsync(id);
-            if (post == null) return NotFound(string.Empty);
             return Ok(post);
         }
 
