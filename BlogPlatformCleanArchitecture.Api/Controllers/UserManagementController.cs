@@ -78,7 +78,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         [Authorize]
         public async Task<IActionResult> DeleteUserAsync(string UserName, string? refreshToken)
         {
-            var CurrentUserName = Request.Cookies["UserName"];
             if(refreshToken == null)
                 refreshToken = Request.Cookies["refreshToken"];
             if (!ModelState.IsValid)

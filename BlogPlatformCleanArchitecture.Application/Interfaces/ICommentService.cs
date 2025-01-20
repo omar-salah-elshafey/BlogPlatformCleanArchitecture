@@ -13,7 +13,7 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
         Task<CommentResponseModel> CreateCommentAsync(CommentDto commentDto, string userId, string userName);
         Task<IEnumerable<CommentResponseModel>> GetAllCommentsAsync();
         Task<IEnumerable<CommentResponseModel>> GetCommentsByUserAsync(string UserName);
-        Task<bool> DeleteCommentAsync(int id, string userId, bool isAdmin);
+        Task DeleteCommentAsync(int id, string userId);
 
         Task<CommentResponseModel> UpdateCommentAsync(int id, CommentDto commentDto, string userId, string UserName);
     }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BlogPlatformCleanArchitecture.Api.Controllers
 {
@@ -14,21 +15,23 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
     {
         public readonly ICommentService _commentService;
         private readonly UserManager<ApplicationUser> _userManager;
-        public CommentController(ICommentService commentService, UserManager<ApplicationUser> userManager)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public CommentController(ICommentService commentService, UserManager<ApplicationUser> userManager, 
+            IHttpContextAccessor httpContextAccessor)
         {
             _commentService = commentService;
             _userManager = userManager;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [Authorize]
         [HttpPost("add-comment")]
         public async Task<IActionResult> AddCommentAsync(CommentDto commentDto)
         {
-            var UserId = Request.Cookies["userId"];
-            var UserName = Request.Cookies["UserName"];
-            var result = await _commentService.CreateCommentAsync(commentDto, UserId, UserName);
-            if (result == null)
-                return BadRequest("An error occurred!");
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var userName = userClaims!.Identity?.Name;
+            var userId = userClaims!.FindFirstValue(ClaimTypes.NameIdentifier);
+            var result = await _commentService.CreateCommentAsync(commentDto, userId, userName);
             return Ok(result);
         }
 
@@ -51,10 +54,10 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         [HttpPut("update-comment")]
         public async Task<IActionResult> UpdateCommentAsync(int id, CommentDto commentDto)
         {
-            var userId = Request.Cookies["userId"];
-            var userName = Request.Cookies["userName"];
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var userName = userClaims!.Identity?.Name;
+            var userId = userClaims!.FindFirstValue(ClaimTypes.NameIdentifier);
             var updatedComment = await _commentService.UpdateCommentAsync(id, commentDto, userId, userName);
-            if (updatedComment == null) return BadRequest(string.Empty);
             return Ok(updatedComment);
         }
 
@@ -62,13 +65,10 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         [HttpDelete("delete-comment")]
         public async Task<IActionResult> DeleteCommentAsync(int id)
         {
-            var userId = Request.Cookies["userId"];
-            var user = await _userManager.FindByIdAsync(userId);
-            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-            var result = await _commentService.DeleteCommentAsync(id, userId, isAdmin);
-            if (!result)
-                return NotFound(string.Empty);
-            return Ok("Deleted Successfully");
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var userId = userClaims!.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _commentService.DeleteCommentAsync(id, userId);
+            return Ok(new {message = "Deleted Successfully" });
         }
     }
 }
