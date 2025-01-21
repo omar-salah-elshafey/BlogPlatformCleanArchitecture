@@ -24,6 +24,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
                 .Include(p => p.Author)
                 .Include(p => p.Comments)
                 .ThenInclude(c => c.User)
+                .OrderByDescending(p => p.CreatedDate)
                 .ToListAsync();
         }
 
@@ -44,6 +45,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
                 .Include(p => p.Author)
                 .Include(p => p.Comments)
                 .ThenInclude(c => c.User)
+                .OrderByDescending(p => p.CreatedDate)
                 .ToListAsync();
         }
 

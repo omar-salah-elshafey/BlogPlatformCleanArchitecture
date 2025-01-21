@@ -68,11 +68,13 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             var post = await _postRepository.GetPostByIdAsync(commentDto.PostId);
             if (post == null)
                 throw new UserNotFoundException($"No posts were found with this ID: {commentDto.PostId}");
+            if(string.IsNullOrWhiteSpace(commentDto.content))
+                throw new NullOrWhiteSpaceInputException("Content can't be null");
             var comment = new Comment
             {
                 UserId = userId,
                 PostId = commentDto.PostId,
-                Content = commentDto.content,
+                Content = commentDto.content.Trim(),
                 CreatedDate = DateTime.Now.ToLocalTime()
             };
             await _commentRepository.AddCommentAsync(comment);
@@ -108,7 +110,9 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 throw new UserNotFoundException($"No comments were found with this ID: {id}");
             if (comment.UserId != userId)
                 throw new ExceptionHandling.UnauthorizedAccessException("You aren't Authorized to do this action!");
-            comment.Content = commentDto.content;
+            if (string.IsNullOrWhiteSpace(commentDto.content))
+                throw new NullOrWhiteSpaceInputException("Content can't be null");
+            comment.Content = commentDto.content.Trim();
             await _commentRepository.UpdateCommentAsync(comment);
             return new CommentResponseModel
             {

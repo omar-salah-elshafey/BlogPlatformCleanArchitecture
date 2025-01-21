@@ -9,7 +9,7 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
         Task<PostResponseModel> GetPostByIdAsync(int id);
         Task<IEnumerable<PostResponseModel>> GetPostsByUserAsync(string UserName);
         Task<PostResponseModel> CreatePostAsync(PostDto postDto, string authId, string authUserName);
-        Task<PostResponseModel> UpdatePostAsync(int id, PostDto postDto, string authId, string authUserName);
-        Task<bool> DeletePostAsync(int id, string userId, bool isAdmin);
+        Task<PostResponseModel> UpdatePostAsync(int id, PostDto postDto, string userId, string authUserName);
+        Task DeletePostAsync(int id, string userId);
     }
 }

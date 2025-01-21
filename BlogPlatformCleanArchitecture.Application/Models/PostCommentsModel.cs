@@ -8,6 +8,7 @@ namespace BlogPlatformCleanArchitecture.Application.Models
 {
     public class PostCommentsModel
     {
+        public int CommentId { get; set; }
         public string UserName { get; set; }
         public string Content { get; set; }
         public DateTime CreatedDate { get; set; }

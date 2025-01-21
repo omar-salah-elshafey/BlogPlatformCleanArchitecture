@@ -34,10 +34,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 .Where(c => !c.IsDeleted)
                 .Select(c => new PostCommentsModel
                     {
+                        CommentId = c.Id,
                         UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
                         Content = c.Content,
                         CreatedDate = c.CreatedDate
-                    }).ToList()
+                    }).OrderByDescending(c => c.CreatedDate).ToList()
             });
         }
 
@@ -59,10 +60,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 .Where(c => !c.IsDeleted)
                 .Select(c => new PostCommentsModel
                     {
+                        CommentId = c.Id,
                         UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
                         Content = c.Content,
                         CreatedDate = c.CreatedDate
-                    }).ToList()
+                    }).OrderByDescending(c => c.CreatedDate).ToList()
             };
         }
 
@@ -83,20 +85,23 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 .Where(c => !c.IsDeleted)
                 .Select(c => new PostCommentsModel
                     {
+                        CommentId = c.Id,
                         UserName = c.User.UserName,
                         Content = c.Content,
                         CreatedDate = c.CreatedDate
-                    }).ToList()
+                    }).OrderByDescending(c => c.CreatedDate).ToList()
             });
         }
 
         public async Task<PostResponseModel> CreatePostAsync(PostDto postDto, string authId, string authUserName)
         {
+            if (string.IsNullOrWhiteSpace(postDto.Title) || string.IsNullOrWhiteSpace(postDto.Content))
+                throw new NullOrWhiteSpaceInputException("Title or Content cannot be empty!");
             var post = new Post
             {
                 AuthorId = authId,
-                Title = postDto.Title,
-                Content = postDto.Content,
+                Title = postDto.Title.Trim(),
+                Content = postDto.Content.Trim(),
                 CreatedDate = DateTime.Now.ToLocalTime()
             };
             await _postRepository.AddPostAsync(post);
@@ -110,21 +115,25 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 ModifiedDate = post.ModifiedDate,
                 Comments = post.Comments?.Select(c => new PostCommentsModel
                 {
+                    CommentId = c.Id,
                     UserName = c.User.UserName,
                     Content = c.Content,
                     CreatedDate = c.CreatedDate
-                }).ToList() ?? new List<PostCommentsModel>() // Ensure Comments are not null
+                }).OrderByDescending(c => c.CreatedDate).ToList() ?? new List<PostCommentsModel>()
             };
         }
 
-
-        public async Task<PostResponseModel> UpdatePostAsync(int id, PostDto postDto, string authId, string authUserName)
+        public async Task<PostResponseModel> UpdatePostAsync(int id, PostDto postDto, string userId, string authUserName)
         {
             var post = await _postRepository.GetPostByIdAsync(id);
-            if (post == null || post.AuthorId != authId)
-                return null;
-            post.Title = postDto.Title;
-            post.Content = postDto.Content;
+            if (post == null)
+                throw new UserNotFoundException("Post Not Found!");
+            if (post.AuthorId != userId)
+                throw new ExceptionHandling.UnauthorizedAccessException("You aren't authorized to do this action!");
+            if(string.IsNullOrWhiteSpace(postDto.Title) || string.IsNullOrWhiteSpace(postDto.Content))
+                throw new NullOrWhiteSpaceInputException("Title or Content cannot be empty!");
+            post.Title = postDto.Title.Trim();
+            post.Content = postDto.Content.Trim();
             post.ModifiedDate = DateTime.Now.ToLocalTime();
             await _postRepository.UpdatePostAsync(post);
             return new PostResponseModel
@@ -134,17 +143,27 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Title = post.Title,
                 Content = post.Content,
                 CreatedDate = post.CreatedDate,
-                ModifiedDate = post.ModifiedDate
+                ModifiedDate = post.ModifiedDate,
+                Comments = post.Comments?.Select(c => new PostCommentsModel
+                {
+                    CommentId = c.Id,
+                    UserName = c.User.UserName,
+                    Content = c.Content,
+                    CreatedDate = c.CreatedDate
+                }).OrderByDescending(c => c.CreatedDate).ToList() ?? new List<PostCommentsModel>()
             };
         }
 
-        public async Task<bool> DeletePostAsync(int id, string userId, bool isAdmin)
+        public async Task DeletePostAsync(int id, string userId)
         {
+            var user = await _userManager.FindByIdAsync(userId);
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
             var post = await _postRepository.GetPostByIdAsync(id);
-            if (post == null || (!isAdmin && post.AuthorId != userId))
-                return false;
+            if (post == null)
+                throw new UserNotFoundException("Post Not Found!");
+            if (!isAdmin && post.AuthorId != userId)
+                throw new ExceptionHandling.UnauthorizedAccessException("You aren't authorized to do this action!");
             await _postRepository.DeletePostAsync(id);
-            return true;
         }
     }
 }
