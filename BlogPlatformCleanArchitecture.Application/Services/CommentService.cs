@@ -5,12 +5,7 @@ using BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories;
 using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -32,32 +27,69 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _logger = logger;
         }
 
-        public async Task<IEnumerable<CommentResponseModel>> GetAllCommentsAsync()
+        public async Task<PaginatedResponseModel<CommentResponseModel>> GetAllCommentsAsync(int pageNumber, int pageSize)
         {
-            var comments = await _commentRepository.GetAllCommentsAsync();
-            return comments.Select(x => new CommentResponseModel
+            var paginatedComments = await _commentRepository.GetAllCommentsAsync(pageNumber, pageSize);
+
+            var commentResponses = paginatedComments.Items.Select(c => new CommentResponseModel
             {
-                Id = x.Id,
-                PostId = x.PostId,
-                UserName = x.User.IsDeleted ? "Deleted Account" : x.User.UserName,
-                Content = x.Content,
-                CreatedDate = x.CreatedDate,
+                Id = c.Id,
+                PostId = c.PostId,
+                UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
+                Content = c.Content,
+                CreatedDate = c.CreatedDate,
             });
+            return new PaginatedResponseModel<CommentResponseModel>
+            {
+                PageNumber = paginatedComments.PageNumber,
+                PageSize = paginatedComments.PageSize,
+                TotalItems = paginatedComments.TotalItems,
+                Items = commentResponses
+            };
         }
 
-        public async Task<IEnumerable<CommentResponseModel>> GetCommentsByUserAsync(string UserName)
+        public async Task<PaginatedResponseModel<CommentResponseModel>> GetCommentsByUserAsync(string UserName, int pageNumber, int pageSize)
         {
             var user = await _userManager.FindByNameAsync(UserName);
-            if (user == null || user.IsDeleted) return null;
-            var comments = await _commentRepository.GetCommentsByUserAsync(UserName);
-            return comments.Select(x => new CommentResponseModel
+            if (user == null)
+                throw new UserNotFoundException($"No user was found with this userName: {UserName}");
+            var paginatedComments = await _commentRepository.GetCommentsByUserAsync(UserName, pageNumber, pageSize);
+            var commentResponses = paginatedComments.Items.Select(c => new CommentResponseModel
             {
-                Id = x.Id,
-                PostId = x.PostId,
-                UserName = x.User.UserName,
-                Content = x.Content,
-                CreatedDate = x.CreatedDate,
+                Id = c.Id,
+                PostId = c.PostId,
+                UserName = c.User.UserName,
+                Content = c.Content,
+                CreatedDate = c.CreatedDate,
             });
+            return new PaginatedResponseModel<CommentResponseModel>{
+                PageNumber = paginatedComments.PageNumber,
+                PageSize = paginatedComments.PageSize,
+                TotalItems = paginatedComments.TotalItems,
+                Items = commentResponses
+            };
+        }
+
+        public async Task<PaginatedResponseModel<CommentResponseModel>> GetCommentsByPostAsync(int postId, int pageNumber, int pageSize)
+        {
+            var post = await _postRepository.GetPostByIdAsync(postId);
+            if (post == null)
+                throw new UserNotFoundException($"No posts were found with this ID: {postId}");
+            var paginatedComments = await _commentRepository.GetCommentsByPostAsync(postId, pageNumber, pageSize);
+            var commentResponses = paginatedComments.Items.Select(c => new CommentResponseModel
+            {
+                Id = c.Id,
+                PostId = c.PostId,
+                UserName = c.User.UserName,
+                Content = c.Content,
+                CreatedDate = c.CreatedDate,
+            });
+            return new PaginatedResponseModel<CommentResponseModel>{
+                PageNumber = paginatedComments.PageNumber,
+                PageSize = paginatedComments.PageSize,
+                TotalItems = paginatedComments.TotalItems,
+                Items = commentResponses
+            };
         }
 
         public async Task<CommentResponseModel> CreateCommentAsync(CommentDto commentDto, string userId, string userName)

@@ -1,17 +1,14 @@
-﻿using BlogPlatformCleanArchitecture.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using BlogPlatformCleanArchitecture.Application.Models;
+using BlogPlatformCleanArchitecture.Domain.Entities;
 
 namespace BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories
 {
     public interface ICommentRepository 
     { 
-        Task<IEnumerable<Comment>> GetAllCommentsAsync(); 
+        Task<PaginatedResponseModel<Comment>> GetAllCommentsAsync(int pageNumber, int pageSize); 
         Task<Comment> GetCommentByIdAsync(int id); 
-        Task<IEnumerable<Comment>> GetCommentsByUserAsync(string userName); 
+        Task<PaginatedResponseModel<Comment>> GetCommentsByUserAsync(string userName, int pageNumber, int pageSize);
+        Task<PaginatedResponseModel<Comment>> GetCommentsByPostAsync(int postId, int pageNumber, int pageSize);
         Task AddCommentAsync(Comment comment); 
         Task UpdateCommentAsync(Comment comment); Task DeleteCommentAsync(int id); 
     }

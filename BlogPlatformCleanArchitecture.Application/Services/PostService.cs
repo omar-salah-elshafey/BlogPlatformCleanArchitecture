@@ -19,10 +19,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _userManager = userManager;
         }
 
-        public async Task<IEnumerable<PostResponseModel>> GetAllPostsAsync()
+        public async Task<PaginatedResponseModel<PostResponseModel>> GetAllPostsAsync(int pageNumber, int pageSize)
         {
-            var posts = await _postRepository.GetAllPostsAsync();
-            return posts.Select(p => new PostResponseModel
+            var paginatedPosts = await _postRepository.GetAllPostsAsync(pageNumber, pageSize);
+
+            var postResponses = paginatedPosts.Items.Select(p => new PostResponseModel
             {
                 Id = p.Id,
                 AuthorName = p.Author.IsDeleted ? "Deleted Account" : p.Author.UserName,
@@ -31,8 +32,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 CreatedDate = p.CreatedDate,
                 ModifiedDate = p.ModifiedDate,
                 Comments = p.Comments
-                .Where(c => !c.IsDeleted)
-                .Select(c => new PostCommentsModel
+                    .Where(c => !c.IsDeleted)
+                    .Select(c => new PostCommentsModel
                     {
                         CommentId = c.Id,
                         UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
@@ -40,6 +41,14 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                         CreatedDate = c.CreatedDate
                     }).OrderByDescending(c => c.CreatedDate).ToList()
             });
+
+            return new PaginatedResponseModel<PostResponseModel>
+            {
+                PageNumber = paginatedPosts.PageNumber,
+                PageSize = paginatedPosts.PageSize,
+                TotalItems = paginatedPosts.TotalItems,
+                Items = postResponses
+            };
         }
 
         public async Task<PostResponseModel> GetPostByIdAsync(int id)
@@ -55,25 +64,16 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Title = post.Title,
                 Content = post.Content,
                 CreatedDate = post.CreatedDate,
-                ModifiedDate = post.ModifiedDate,
-                Comments = post.Comments
-                .Where(c => !c.IsDeleted)
-                .Select(c => new PostCommentsModel
-                    {
-                        CommentId = c.Id,
-                        UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
-                        Content = c.Content,
-                        CreatedDate = c.CreatedDate
-                    }).OrderByDescending(c => c.CreatedDate).ToList()
+                ModifiedDate = post.ModifiedDate
             };
         }
 
-        public async Task<IEnumerable<PostResponseModel>> GetPostsByUserAsync(string userName)
+        public async Task<PaginatedResponseModel<PostResponseModel>> GetPostsByUserAsync(string userName, int pageNumber, int pageSize)
         {
             var user = await _userManager.FindByNameAsync(userName);
             if (user == null || user.IsDeleted) throw new UserNotFoundException("User Not Found!");
-            var posts = await _postRepository.GetPostsByUserAsync(userName);
-            return posts.Select(p => new PostResponseModel
+            var paginatedPosts = await _postRepository.GetPostsByUserAsync(userName, pageNumber, pageSize);
+            var postResponses = paginatedPosts.Items.Select(p => new PostResponseModel
             {
                 Id = p.Id,
                 AuthorName = p.Author.UserName,
@@ -84,13 +84,20 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Comments = p.Comments
                 .Where(c => !c.IsDeleted)
                 .Select(c => new PostCommentsModel
-                    {
-                        CommentId = c.Id,
-                        UserName = c.User.UserName,
-                        Content = c.Content,
-                        CreatedDate = c.CreatedDate
-                    }).OrderByDescending(c => c.CreatedDate).ToList()
+                {
+                    CommentId = c.Id,
+                    UserName = c.User.UserName,
+                    Content = c.Content,
+                    CreatedDate = c.CreatedDate
+                }).OrderByDescending(c => c.CreatedDate).ToList()
             });
+            return new PaginatedResponseModel<PostResponseModel>
+            {
+                PageNumber = paginatedPosts.PageNumber,
+                PageSize = paginatedPosts.PageSize,
+                TotalItems = paginatedPosts.TotalItems,
+                Items = postResponses
+            };
         }
 
         public async Task<PostResponseModel> CreatePostAsync(PostDto postDto, string authId, string authUserName)
@@ -113,13 +120,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = post.Content,
                 CreatedDate = post.CreatedDate,
                 ModifiedDate = post.ModifiedDate,
-                Comments = post.Comments?.Select(c => new PostCommentsModel
-                {
-                    CommentId = c.Id,
-                    UserName = c.User.UserName,
-                    Content = c.Content,
-                    CreatedDate = c.CreatedDate
-                }).OrderByDescending(c => c.CreatedDate).ToList() ?? new List<PostCommentsModel>()
+                Comments =  new List<PostCommentsModel>()
             };
         }
 

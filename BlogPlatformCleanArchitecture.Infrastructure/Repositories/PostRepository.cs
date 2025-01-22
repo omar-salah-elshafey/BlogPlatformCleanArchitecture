@@ -1,4 +1,5 @@
 ﻿using BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories;
+using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -17,15 +18,26 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Post>> GetAllPostsAsync()
+        public async Task<PaginatedResponseModel<Post>> GetAllPostsAsync(int pageNumber, int pageSize)
         {
-            return await _context.Posts
+            var totalItems = await _context.Posts.CountAsync(p => !p.IsDeleted);
+            var posts = await _context.Posts
                 .Where(p => !p.IsDeleted)
                 .Include(p => p.Author)
                 .Include(p => p.Comments)
                 .ThenInclude(c => c.User)
+                .AsSplitQuery()
                 .OrderByDescending(p => p.CreatedDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+            return new PaginatedResponseModel<Post>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                Items = posts
+            };
         }
 
         public async Task<Post> GetPostByIdAsync(int id)
@@ -33,20 +45,29 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
             return await _context.Posts
                 .Where(p => !p.IsDeleted && p.Id == id )
                 .Include(p => p.Author)
-                .Include(p => p.Comments)
-                .ThenInclude(c => c.User)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<Post>> GetPostsByUserAsync(string userName)
+        public async Task<PaginatedResponseModel<Post>> GetPostsByUserAsync(string userName, int pageNumber, int pageSize)
         {
-            return await _context.Posts
+            var totalItems = await _context.Posts.Where(p => p.Author.UserName == userName).CountAsync(p => !p.IsDeleted);
+            var posts = await _context.Posts
                 .Where(p => !p.IsDeleted && p.Author.UserName == userName)
                 .Include(p => p.Author)
                 .Include(p => p.Comments)
                 .ThenInclude(c => c.User)
+                .AsSplitQuery()
                 .OrderByDescending(p => p.CreatedDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+            return new PaginatedResponseModel<Post>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                Items = posts
+            };
         }
 
         public async Task AddPostAsync(Post post)

@@ -1,16 +1,12 @@
-﻿using BlogPlatformCleanArchitecture.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using BlogPlatformCleanArchitecture.Application.Models;
+using BlogPlatformCleanArchitecture.Domain.Entities;
 
 namespace BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories
 {
     public interface IPostRepository {
-        Task<IEnumerable<Post>> GetAllPostsAsync(); 
+        Task<PaginatedResponseModel<Post>> GetAllPostsAsync(int pageNumber, int pageSize); 
         Task<Post> GetPostByIdAsync(int id); 
-        Task<IEnumerable<Post>> GetPostsByUserAsync(string userName); 
+        Task<PaginatedResponseModel<Post>> GetPostsByUserAsync(string userName, int pageNumber, int pageSize); 
         Task AddPostAsync(Post post); 
         Task UpdatePostAsync(Post post); 
         Task DeletePostAsync(int id); 

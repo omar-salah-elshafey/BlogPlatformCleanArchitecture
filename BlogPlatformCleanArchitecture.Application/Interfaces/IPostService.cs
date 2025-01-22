@@ -5,9 +5,9 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
 {
     public interface IPostService
     {
-        Task<IEnumerable<PostResponseModel>> GetAllPostsAsync();
+        Task<PaginatedResponseModel<PostResponseModel>> GetAllPostsAsync(int pageNumber, int pageSize);
         Task<PostResponseModel> GetPostByIdAsync(int id);
-        Task<IEnumerable<PostResponseModel>> GetPostsByUserAsync(string UserName);
+        Task<PaginatedResponseModel<PostResponseModel>> GetPostsByUserAsync(string UserName, int pageNumber, int pageSize);
         Task<PostResponseModel> CreatePostAsync(PostDto postDto, string authId, string authUserName);
         Task<PostResponseModel> UpdatePostAsync(int id, PostDto postDto, string userId, string authUserName);
         Task DeletePostAsync(int id, string userId);

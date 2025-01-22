@@ -11,8 +11,9 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
     public interface ICommentService
     {
         Task<CommentResponseModel> CreateCommentAsync(CommentDto commentDto, string userId, string userName);
-        Task<IEnumerable<CommentResponseModel>> GetAllCommentsAsync();
-        Task<IEnumerable<CommentResponseModel>> GetCommentsByUserAsync(string UserName);
+        Task<PaginatedResponseModel<CommentResponseModel>> GetAllCommentsAsync(int pageNumber, int pageSize);
+        Task<PaginatedResponseModel<CommentResponseModel>> GetCommentsByUserAsync(string UserName, int pageNumber, int pageSize);
+        Task<PaginatedResponseModel<CommentResponseModel>> GetCommentsByPostAsync(int postId, int pageNumber, int pageSize);
         Task DeleteCommentAsync(int id, string userId);
 
         Task<CommentResponseModel> UpdateCommentAsync(int id, CommentDto commentDto, string userId, string UserName);

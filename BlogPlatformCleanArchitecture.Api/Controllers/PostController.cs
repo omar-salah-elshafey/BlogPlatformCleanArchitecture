@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Drawing.Printing;
 using System.Security.Claims;
 
 namespace BlogPlatformCleanArchitecture.Api.Controllers
@@ -36,17 +37,17 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpGet("get-all-posts")]
-        public async Task<IActionResult> GetAllPostsAsync()
+        public async Task<IActionResult> GetAllPostsAsync(int pageNumber = 1, int pageSize = 5)
         {
-            var posts = await _postService.GetAllPostsAsync();
-            return Ok(posts);
+            var paginatedPosts = await _postService.GetAllPostsAsync(pageNumber, pageSize);
+            return Ok(paginatedPosts );
         }
 
         [HttpGet("get-posts-by-user")]
-        public async Task<IActionResult> GetPostsByUserAsync(string UserName)
+        public async Task<IActionResult> GetPostsByUserAsync(string UserName, int pageNumber = 1, int pageSize = 5)
         {
-            var posts = await _postService.GetPostsByUserAsync(UserName);
-            return Ok(posts);
+            var paginatedPosts = await _postService.GetPostsByUserAsync(UserName, pageNumber, pageSize);
+            return Ok(paginatedPosts );
         }
 
         [HttpGet("get-post-by-id")]

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Drawing.Printing;
 using System.Security.Claims;
 
 namespace BlogPlatformCleanArchitecture.Api.Controllers
@@ -36,18 +37,24 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpGet("get-all-comments")]
-        public async Task<IActionResult> GetAllCommentsAsync()
+        public async Task<IActionResult> GetAllCommentsAsync(int pageNumber = 1, int pageSize = 5)
         {
-            var comments = await _commentService.GetAllCommentsAsync();
-            return Ok(comments);
+            var paginatedComments = await _commentService.GetAllCommentsAsync(pageNumber, pageSize);
+            return Ok(paginatedComments);
         }
 
         [HttpGet("get-comments-by-user")]
-        public async Task<IActionResult> GetCommentsByUserAsync(string UserName)
+        public async Task<IActionResult> GetCommentsByUserAsync(string UserName, int pageNumber = 1, int pageSize = 5)
         {
-            var result = await _commentService.GetCommentsByUserAsync(UserName);
-            if (result == null) return NotFound(string.Empty);
-            return Ok(result);
+            var paginatedComments = await _commentService.GetCommentsByUserAsync(UserName, pageNumber, pageSize);
+            return Ok(paginatedComments);
+        }
+
+        [HttpGet("get-comments-by-post")]
+        public async Task<IActionResult> GetCommentsByPostAsync(int postId, int pageNumber = 1, int pageSize = 5)
+        {
+            var paginatedComments = await _commentService.GetCommentsByPostAsync(postId, pageNumber, pageSize);
+            return Ok(paginatedComments);
         }
 
         [Authorize]
