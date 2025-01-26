@@ -131,7 +131,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             var user = await _userManager.FindByIdAsync(userId);
             var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
             if (!isAdmin && comment.UserId != userId && post.AuthorId != userId)
-                throw new ExceptionHandling.UnauthorizedAccessException("You aren't Authorized to do this action!");
+                throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
             await _commentRepository.DeleteCommentAsync(id);
         }
 
@@ -141,7 +141,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (comment == null)
                 throw new UserNotFoundException($"No comments were found with this ID: {id}");
             if (comment.UserId != userId)
-                throw new ExceptionHandling.UnauthorizedAccessException("You aren't Authorized to do this action!");
+                throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
             if (string.IsNullOrWhiteSpace(commentDto.content))
                 throw new NullOrWhiteSpaceInputException("Content can't be null");
             comment.Content = commentDto.content.Trim();

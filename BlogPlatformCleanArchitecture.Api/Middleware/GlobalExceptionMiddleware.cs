@@ -79,10 +79,16 @@ namespace BlogPlatformCleanArchitecture.Api.Middleware
                 context.Response.StatusCode = StatusCodes.Status400BadRequest; 
                 await context.Response.WriteAsJsonAsync(new { error = ex.Message }); 
             }
-            catch (Application.ExceptionHandling.UnauthorizedAccessException ex)
+            catch (ForbiddenAccessException ex)
             {
-                _logger.LogWarning($"Unauthorized access error: {ex.Message}");
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                _logger.LogWarning($"Forbidden access error: {ex.Message}");
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+            }
+            catch (InvalidInputsException ex)
+            {
+                _logger.LogWarning($"Invalid Inputs: {ex.Message}");
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 await context.Response.WriteAsJsonAsync(new { error = ex.Message });
             }
             catch (Exception ex)

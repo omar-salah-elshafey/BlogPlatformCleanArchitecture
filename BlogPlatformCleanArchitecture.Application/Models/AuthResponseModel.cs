@@ -10,7 +10,6 @@
         public string RefreshToken { get; set; }
         public DateTime RefreshTokenExpiresOn { get; set; }
         public string Message { get; set; }
-        public bool IsAuthenticated { get; set; }
         public bool IsConfirmed { get; set; }
     }
 }

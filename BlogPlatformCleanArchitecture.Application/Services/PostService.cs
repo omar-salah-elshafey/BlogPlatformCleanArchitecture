@@ -130,7 +130,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (post == null)
                 throw new UserNotFoundException("Post Not Found!");
             if (post.AuthorId != userId)
-                throw new ExceptionHandling.UnauthorizedAccessException("You aren't authorized to do this action!");
+                throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
             if(string.IsNullOrWhiteSpace(postDto.Title) || string.IsNullOrWhiteSpace(postDto.Content))
                 throw new NullOrWhiteSpaceInputException("Title or Content cannot be empty!");
             post.Title = postDto.Title.Trim();
@@ -163,7 +163,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (post == null)
                 throw new UserNotFoundException("Post Not Found!");
             if (!isAdmin && post.AuthorId != userId)
-                throw new ExceptionHandling.UnauthorizedAccessException("You aren't authorized to do this action!");
+                throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
             await _postRepository.DeletePostAsync(id);
         }
     }

@@ -5,7 +5,7 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task<AuthResponseModel> RegisterUserAsync(RegistrationDto registrationDto, string role);
+        Task<AuthResponseModel> RegisterUserAsync(RegistrationDto registrationDto);
         Task<AuthResponseModel> LoginAsync(LoginDto loginDto);
         Task<bool> LogoutAsync(string refreshToken);
     }

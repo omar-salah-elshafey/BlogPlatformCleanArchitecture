@@ -10,6 +10,7 @@ using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
+using BlogPlatformCleanArchitecture.Domain.Enums;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -38,16 +39,16 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<AuthResponseModel> RegisterUserAsync(RegistrationDto registrationDto, string role)
+        public async Task<AuthResponseModel> RegisterUserAsync(RegistrationDto registrationDto)
         {
-            //check if user exists
+            _logger.LogWarning("Registering a new user...");
+            
             if (await _userManager.FindByEmailAsync(registrationDto.Email) is not null)
                 throw new DuplicateEmailException("This Email is already used!");
 
             if (await _userManager.FindByNameAsync(registrationDto.UserName) is not null)
                 throw new DuplicateUsernameException("This Username is already used!");
 
-            // Create the new user
             var user = new ApplicationUser
             {
                 FirstName = registrationDto.FirstName,
@@ -55,14 +56,15 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 UserName = registrationDto.UserName,
                 Email = registrationDto.Email
             };
+            _logger.LogWarning($"user {user.UserName}, {user.FirstName}, {user.LastName}, {user.Email}");
             var result = await _userManager.CreateAsync(user, registrationDto.Password);
             if (!result.Succeeded)
             {
                 var errors = string.Join(Environment.NewLine, result.Errors.Select(e => e.Description));
                 throw new UserCreationException($"Failed to create user: {errors}");
             }
-            // Assign the user to the specified role
-            await _userManager.AddToRoleAsync(user, role);
+            
+            await _userManager.AddToRoleAsync(user, registrationDto.Role.ToString());
 
             //generating the token to verify the user's email
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -77,7 +79,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             {
                 Email = user.Email,
                 Username = user.UserName,
-                Message = $"A verification code has been sent to your Email.{Environment.NewLine}Verify Your Email to be able to login :) "
+                Role = registrationDto.Role.ToString(),
+                Message = $"A verification code has been sent to your Email. Verify Your Email to be able to login :) "
             };
         }
 
@@ -103,7 +106,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
 
             var jwtSecurityToken = await _tokenService.CreateJwtTokenAsync(user);
 
-            authResponseModel.IsAuthenticated = true;
+
             authResponseModel.Email = user.Email;
             authResponseModel.ExpiresAt = jwtSecurityToken.ValidTo;
             authResponseModel.Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault() ?? "User";

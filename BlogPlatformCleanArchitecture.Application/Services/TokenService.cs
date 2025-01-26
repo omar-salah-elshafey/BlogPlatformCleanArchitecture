@@ -78,7 +78,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             await _userManager.UpdateAsync(user);
 
             var jwtToken = await CreateJwtTokenAsync(user);
-            authResponseModel.IsAuthenticated = true;
             authResponseModel.AccessToken = new JwtSecurityTokenHandler().WriteToken(jwtToken);
             authResponseModel.ExpiresAt = jwtToken.ValidTo;
             authResponseModel.Email = user.Email;

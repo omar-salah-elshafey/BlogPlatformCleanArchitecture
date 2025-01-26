@@ -7,7 +7,6 @@ using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using UnauthorizedAccessException = BlogPlatformCleanArchitecture.Application.ExceptionHandling.UnauthorizedAccessException;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -121,7 +120,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (user is null || user.IsDeleted)
                 throw new UserNotFoundException("User Not Found!");
             if (!CurrentUserName.Equals(UserName) && role != "ADMIN")
-                throw new UnauthorizedAccessException("You aren't Authorized to do this action!");
+                throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
             _logger.LogWarning(CurrentUserName);
             _logger.LogWarning(currentUser.ToString());
             user.IsDeleted = true;
@@ -144,7 +143,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (!currentUserName!.Equals(updateUserDto.UserName) && !isAdmin)
             {
                 _logger.LogError("You aren't Authorized to do this Action!");
-                throw new UnauthorizedAccessException("You aren't Authorized to do this Action!");
+                throw new ForbiddenAccessException("You aren't Authenticated to do this Action!");
             }
             user.FirstName = updateUserDto.FirstName;
             user.LastName = updateUserDto.LastName;

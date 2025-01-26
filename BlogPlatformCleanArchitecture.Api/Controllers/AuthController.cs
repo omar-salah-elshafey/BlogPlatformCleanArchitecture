@@ -2,10 +2,10 @@
 using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.RegularExpressions;
+using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
+using BlogPlatformCleanArchitecture.Domain.Enums;
 
 namespace BlogPlatformCleanArchitecture.Api.Controllers
 {
@@ -28,37 +28,22 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             _logger = logger;
         }
 
-        [HttpPost("register-reader")]
+        [HttpPost("register-user")]
         public async Task<IActionResult> RegisterReaderAsync([FromBody] RegistrationDto registrationDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var result = await _authService.RegisterUserAsync(registrationDto, "Reader");
+
+            if (registrationDto.Role == Role.Admin)
+                throw new ForbiddenAccessException("You cannot register as an admin.");
+
+            var result = await _authService.RegisterUserAsync(registrationDto);
 
             return Ok(new
             {
                 result.Email,
                 result.Username,
                 result.Role,
-                result.IsAuthenticated,
-                result.IsConfirmed,
-                result.Message,
-            });
-        }
-
-        [HttpPost("register-author")]
-        public async Task<IActionResult> RegisterAuthorAsync([FromBody] RegistrationDto registrationDto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-            var result = await _authService.RegisterUserAsync(registrationDto, "Author");
-
-            return Ok(new
-            {
-                result.Email,
-                result.Username,
-                result.Role,
-                result.IsAuthenticated,
                 result.IsConfirmed,
                 result.Message,
             });
@@ -70,14 +55,13 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var result = await _authService.RegisterUserAsync(registrationDto, "Admin");
+            var result = await _authService.RegisterUserAsync(registrationDto);
 
             return Ok(new
             {
                 result.Email,
                 result.Username,
                 result.Role,
-                result.IsAuthenticated,
                 result.IsConfirmed,
                 result.Message,
             });
@@ -141,8 +125,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             _logger.LogError("This is the token from the frontEnd: " + refreshToken);
             var result = await _tokenService.RefreshTokenAsync(refreshToken);
 
-            if (!result.IsAuthenticated)
-                return BadRequest(result.Message);
             _cookieService.SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpiresOn);
             return Ok(new
             {

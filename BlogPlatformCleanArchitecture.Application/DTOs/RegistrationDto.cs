@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BlogPlatformCleanArchitecture.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace BlogPlatformCleanArchitecture.Application.DTOs
 {
@@ -13,6 +15,9 @@ namespace BlogPlatformCleanArchitecture.Application.DTOs
         [Required]
         [EmailAddress]
         public string Email { get; set; }
+        [Required]
+        [JsonConverter(typeof(RoleJsonConverter))]
+        public Role Role { get; set; }
         [Required]
         [MinLength(6)]
         public string Password { get; set; }

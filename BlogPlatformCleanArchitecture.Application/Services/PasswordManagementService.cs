@@ -48,23 +48,23 @@ namespace BlogPlatformCleanArchitecture.Application.Services
 
         public async Task ChangePasswordAsync(ChangePasswordDto changePasswordDto)
         {
-            var user = await _userManager.FindByEmailAsync(changePasswordDto.Email);
+            var user = await _userManager.FindByEmailAsync(changePasswordDto.Email.Trim());
             if (user == null || user.IsDeleted)
             {
                 _logger.LogWarning("User not found, Email is incorrect!");
                 throw new UserNotFoundException("User not found, Email is incorrect!");
             }
 
-            if (changePasswordDto.CurrentPassword.Equals(changePasswordDto.NewPassword))
+            if (changePasswordDto.CurrentPassword.Trim().Equals(changePasswordDto.NewPassword.Trim()))
             {
                 _logger.LogWarning("New and old password cannot be the same!");
-                throw new InvalidCredentialsException("New and old password cannot be the same!");
+                throw new InvalidInputsException("New and old password cannot be the same!");
             }
 
             var result = await _userManager.ChangePasswordAsync(user, 
-                changePasswordDto.CurrentPassword, changePasswordDto.NewPassword);
+                changePasswordDto.CurrentPassword.Trim(), changePasswordDto.NewPassword.Trim());
             if (!result.Succeeded)
-                throw new Exception("An error occurred while changing the password!");
+                throw new InvalidInputsException("The Current password is WRONG!");
 
             _logger.LogInformation("Your password has been updated successfully.") ;
         }
