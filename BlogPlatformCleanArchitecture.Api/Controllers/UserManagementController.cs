@@ -24,13 +24,11 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpGet("get-users")]
+        [HttpGet("get-all-users")]
         [Authorize]
-        public async Task<IActionResult> GetUsersAsync()
+        public async Task<IActionResult> GetUsersAsync(int pageNumber = 1, int pageSize = 10)
         {
-            var users = await _userManagementService.GetUSersAsync();
-            if (users.Count == 0)
-                return NotFound("No users found!");
+            var users = await _userManagementService.GetUSersAsync(pageNumber, pageSize);
             return Ok(users);
         }
 
@@ -56,9 +54,9 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
 
         [Authorize]
         [HttpGet("search-users")]
-        public async Task<IActionResult> SearchUsers([FromQuery] string query)
+        public async Task<IActionResult> SearchUsers([FromQuery] string query, int pageNumber = 1, int pageSize = 10)
         {
-            var users = await _userManagementService.SearchUsersAsync(query);
+            var users = await _userManagementService.SearchUsersAsync(query, pageNumber, pageSize);
             return Ok(users);
         }
 

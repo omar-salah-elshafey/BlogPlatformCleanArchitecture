@@ -27,26 +27,35 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _logger = logger;
         }
 
-        public async Task<List<UserDto>> GetUSersAsync()
+        public async Task<PaginatedResponseModel<UserDto>> GetUSersAsync(int pageNumber, int pageSize)
         {
-            var users = await _userManager.Users.ToListAsync();
+            var totalItems = await _userManager.Users.CountAsync(u => !u.IsDeleted);
+            var users = await _userManager.Users
+                .Where(u => !u.IsDeleted).AsSplitQuery()
+                .OrderByDescending(u => u.DateCreated)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
             var userDtos = new List<UserDto>();
             foreach (var user in users)
             {
-                if (!user.IsDeleted)
+                var role = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
+                userDtos.Add(new UserDto
                 {
-                    var role = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
-                    userDtos.Add(new UserDto
-                    {
-                        FirstName = user.FirstName,
-                        LastName = user.LastName,
-                        UserName = user.UserName,
-                        Email = user.Email,
-                        Role = role,
-                    });
-                }
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    Role = role,
+                });
             }
-            return userDtos;
+            return new PaginatedResponseModel<UserDto>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                Items = userDtos
+            };
         }
 
         public async Task<UserDto> GetUserProfileAsync(string userName)
@@ -67,14 +76,18 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             };
         }
 
-        public async Task<List<UserDto>> SearchUsersAsync(string searchQuery)
+        public async Task<PaginatedResponseModel<UserDto>> SearchUsersAsync(string searchQuery, int pageNumber, int pageSize)
         {
             var normalizedSearchQuery = searchQuery.Trim().ToLower();
             if (string.IsNullOrWhiteSpace(searchQuery))
                 throw new NullOrWhiteSpaceInputException("Search query cannot be empty.");
-
+            var totalItems = await _userManager.Users
+                .CountAsync(u => !u.IsDeleted && u.UserName!.ToLower().Contains(normalizedSearchQuery));
             var users = await _userManager.Users
                 .Where(user => !user.IsDeleted && user.UserName!.ToLower().Contains(normalizedSearchQuery))
+                .OrderByDescending(u => u.DateCreated)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
             var userDtos = new List<UserDto>();
@@ -91,7 +104,13 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 });
             }
 
-            return userDtos;
+            return new PaginatedResponseModel<UserDto>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                Items = userDtos
+            };
         }
 
 
