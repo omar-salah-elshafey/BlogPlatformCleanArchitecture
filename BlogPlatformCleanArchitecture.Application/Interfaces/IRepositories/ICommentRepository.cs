@@ -4,7 +4,8 @@ using BlogPlatformCleanArchitecture.Domain.Entities;
 namespace BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories
 {
     public interface ICommentRepository 
-    { 
+    {
+        Task<int> GetCommentsCountAsync();
         Task<PaginatedResponseModel<Comment>> GetAllCommentsAsync(int pageNumber, int pageSize); 
         Task<Comment> GetCommentByIdAsync(int id); 
         Task<PaginatedResponseModel<Comment>> GetCommentsByUserAsync(string userName, int pageNumber, int pageSize);

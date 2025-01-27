@@ -5,6 +5,7 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
 {
     public interface IUserManagementService
     {
+        Task<int> GetUsersCountAsync();
         Task<PaginatedResponseModel<UserDto>> GetUSersAsync(int pageNumber, int pageSize);
         Task<UserDto> GetUserProfileAsync(string userName);
         Task<PaginatedResponseModel<UserDto>> SearchUsersAsync(string searchQuery, int pageNumber, int pageSize);

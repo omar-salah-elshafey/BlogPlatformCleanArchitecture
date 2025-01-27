@@ -27,6 +27,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _logger = logger;
         }
 
+        public async Task<int> GetCommentsCountAsync()
+        {
+            return await _commentRepository.GetCommentsCountAsync();
+        }
+
         public async Task<PaginatedResponseModel<CommentResponseModel>> GetAllCommentsAsync(int pageNumber, int pageSize)
         {
             var paginatedComments = await _commentRepository.GetAllCommentsAsync(pageNumber, pageSize);

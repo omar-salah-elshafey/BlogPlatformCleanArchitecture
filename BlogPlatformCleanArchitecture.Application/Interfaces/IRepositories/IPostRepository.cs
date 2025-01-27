@@ -4,6 +4,7 @@ using BlogPlatformCleanArchitecture.Domain.Entities;
 namespace BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories
 {
     public interface IPostRepository {
+        Task<int> GetPostsCountAsync();
         Task<PaginatedResponseModel<Post>> GetAllPostsAsync(int pageNumber, int pageSize); 
         Task<Post> GetPostByIdAsync(int id); 
         Task<PaginatedResponseModel<Post>> GetPostsByUserAsync(string userName, int pageNumber, int pageSize); 

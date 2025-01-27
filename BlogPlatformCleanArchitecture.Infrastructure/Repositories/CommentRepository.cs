@@ -15,6 +15,11 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
             _context = context;
         }
 
+        public async Task<int> GetCommentsCountAsync()
+        {
+            return await _context.Comments.CountAsync(c => !c.IsDeleted);
+        }
+
         public async Task<PaginatedResponseModel<Comment>> GetAllCommentsAsync(int pageNumber, int pageSize)
         {
             var totalItems = await _context.Comments.CountAsync(c => !c.IsDeleted);

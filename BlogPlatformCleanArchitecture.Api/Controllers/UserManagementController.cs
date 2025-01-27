@@ -24,8 +24,16 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
+        [HttpGet("get-users-count")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetUsersCountAsync()
+        {
+            var usersCount = await _userManagementService.GetUsersCountAsync();
+            return Ok(usersCount);
+        }
+
         [HttpGet("get-all-users")]
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUsersAsync(int pageNumber = 1, int pageSize = 10)
         {
             var users = await _userManagementService.GetUSersAsync(pageNumber, pageSize);

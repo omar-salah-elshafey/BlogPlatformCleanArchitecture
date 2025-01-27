@@ -1,5 +1,6 @@
 ﻿using BlogPlatformCleanArchitecture.Application.DTOs;
 using BlogPlatformCleanArchitecture.Application.Interfaces;
+using BlogPlatformCleanArchitecture.Application.Services;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -34,6 +35,14 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             var userId = userClaims!.FindFirstValue(ClaimTypes.NameIdentifier);
             var result = await _commentService.CreateCommentAsync(commentDto, userId, userName);
             return Ok(result);
+        }
+
+        [HttpGet("get-comments-count")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetCommentsCountAsync()
+        {
+            var commentsCount = await _commentService.GetCommentsCountAsync();
+            return Ok(commentsCount);
         }
 
         [HttpGet("get-all-comments")]

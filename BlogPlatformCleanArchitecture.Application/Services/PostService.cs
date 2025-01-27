@@ -19,6 +19,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _userManager = userManager;
         }
 
+        public async Task<int> GetPostsCountAsync()
+        {
+            return await _postRepository.GetPostsCountAsync();
+        }
+
         public async Task<PaginatedResponseModel<PostResponseModel>> GetAllPostsAsync(int pageNumber, int pageSize)
         {
             var paginatedPosts = await _postRepository.GetAllPostsAsync(pageNumber, pageSize);

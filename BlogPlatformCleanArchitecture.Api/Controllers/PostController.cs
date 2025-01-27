@@ -1,5 +1,6 @@
 ﻿using BlogPlatformCleanArchitecture.Application.DTOs;
 using BlogPlatformCleanArchitecture.Application.Interfaces;
+using BlogPlatformCleanArchitecture.Application.Services;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -34,6 +35,14 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             var authUserName = userClaims!.Identity?.Name;
             var createdPost = await _postService.CreatePostAsync(postDto, authId, authUserName);
             return Ok(createdPost);
+        }
+
+        [HttpGet("get-posts-count")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetPostsCountAsync()
+        {
+            var postsCount = await _postService.GetPostsCountAsync();
+            return Ok(postsCount);
         }
 
         [HttpGet("get-all-posts")]

@@ -27,6 +27,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _logger = logger;
         }
 
+        public async Task<int> GetUsersCountAsync()
+        {
+            return await _userManager.Users.CountAsync(u => !u.IsDeleted);
+        }
+
         public async Task<PaginatedResponseModel<UserDto>> GetUSersAsync(int pageNumber, int pageSize)
         {
             var totalItems = await _userManager.Users.CountAsync(u => !u.IsDeleted);
