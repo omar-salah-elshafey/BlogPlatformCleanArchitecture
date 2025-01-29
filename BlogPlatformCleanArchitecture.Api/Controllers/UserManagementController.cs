@@ -75,9 +75,9 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var result = await _userManagementService.ChangeRoleAsync(changeUserRoleDto);
+            await _userManagementService.ChangeRoleAsync(changeUserRoleDto);
 
-            return Ok(result);
+            return Ok(new {message = $"User {changeUserRoleDto.UserName} has been assignd to Role {changeUserRoleDto.Role.ToUpper()} Successfully :)" });
         }
 
         [HttpDelete("delete-user")]

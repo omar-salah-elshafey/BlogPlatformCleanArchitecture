@@ -29,7 +29,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpPost("register-user")]
-        public async Task<IActionResult> RegisterReaderAsync([FromBody] RegistrationDto registrationDto)
+        public async Task<IActionResult> RegisterUserAsync([FromBody] RegistrationDto registrationDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -50,8 +50,8 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpPost("register-admin")]
-        public async Task<IActionResult> RegisterAdminAsync([FromBody] RegistrationDto registrationDto)
+        [HttpPost("add-user")]
+        public async Task<IActionResult> AddUserAsync([FromBody] RegistrationDto registrationDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);

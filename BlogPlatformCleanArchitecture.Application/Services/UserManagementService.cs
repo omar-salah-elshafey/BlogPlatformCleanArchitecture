@@ -119,17 +119,18 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         }
 
 
-        public async Task<string> ChangeRoleAsync(ChangeUserRoleDto changeRoleDto)
+        public async Task ChangeRoleAsync(ChangeUserRoleDto changeRoleDto)
         {
             var user = await _userManager.FindByNameAsync(changeRoleDto.UserName);
             if (user == null || user.IsDeleted)
-                return ("Invalid UserName!");
-            if (!await _roleManager.RoleExistsAsync(changeRoleDto.Role))
-                return ("Invalid Role!");
-            if (await _userManager.IsInRoleAsync(user, changeRoleDto.Role))
-                return ("User Is already assigned to this role!");
-            var result = await _userManager.AddToRoleAsync(user, changeRoleDto.Role);
-            return $"User {changeRoleDto.UserName} has been assignd to Role {changeRoleDto.Role} Successfully :)";
+                throw new UserNotFoundException("Invalid UserName, User Not Found!");
+            if (!await _roleManager.RoleExistsAsync(changeRoleDto.Role.ToLower()))
+                throw new UserNotFoundException("Invalid Role!");
+            if (await _userManager.IsInRoleAsync(user, changeRoleDto.Role.ToLower()))
+                throw new DuplicateUsernameException("User Is already assigned to this role!");
+            var currentrole = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
+            await _userManager.RemoveFromRoleAsync(user, currentrole);
+            var result = await _userManager.AddToRoleAsync(user, changeRoleDto.Role.ToLower());
         }
 
         public async Task DeleteUserAsync(string UserName, string refreshToken)
