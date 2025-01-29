@@ -3,6 +3,7 @@
 This project is a blog platform built with .NET 8, following the principles of Clean Architecture. 
 It provides a robust and maintainable foundation for creating and managing blog content. 
 This project focuses on the backend implementation, providing a RESTful API for future frontend integration.
+The front-end project linked to this project: [blog-platform front-end](https://github.com/omar-salah-elshafey/blog-platform-angular)
 
 ## Features
 
@@ -17,6 +18,10 @@ This project focuses on the backend implementation, providing a RESTful API for 
 * **Blogging Functionality:**
     * Create, read, update, and delete blog posts.
     * Add and manage comments on posts.
+* **Error Handling:**
+    * Implements a **Global Exception Handler** to catch and handle exceptions consistently.
+    * Ensures API responses remain structured and informative.
+    * Logs unexpected errors and returns appropriate HTTP status codes.
 * **Clean Architecture with Repository Pattern:**  The application is designed using the Repository Pattern to abstract data access and improve maintainability.
 
 ## Roles and Permissions
@@ -69,6 +74,5 @@ The platform has three user roles with different levels of access:
 
 Contributions are welcome! Please feel free to submit pull requests for bug fixes, new features, or improvements.
 
-![image](https://github.com/user-attachments/assets/82cc9566-f792-4bed-b9a2-82800fa354a7)
-
+![screencapture-localhost-7293-swagger-index-html-2025-01-29-11_39_06](https://github.com/user-attachments/assets/bb3f7f1f-c9c0-4194-8dce-0f0317f514aa)
 
