@@ -5,11 +5,13 @@
         public int Id { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
-        public string AuthorId { get; set; }  // Foreign key to User
+        public string AuthorId { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? ModifiedDate { get; set; }
-        public ApplicationUser Author { get; set; }  // Navigation property to User
+        public ApplicationUser Author { get; set; }
         public ICollection<Comment> Comments { get; set; }
         public bool IsDeleted { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? VideoUrl { get; set; }
     }
 }

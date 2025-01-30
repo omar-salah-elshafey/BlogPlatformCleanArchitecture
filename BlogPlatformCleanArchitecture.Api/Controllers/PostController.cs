@@ -68,7 +68,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
 
         [HttpPut("update-post")]
         [Authorize(Roles = "Author, Admin")]
-        public async Task<IActionResult> UpdatePostAsync(int id, PostDto postDto)
+        public async Task<IActionResult> UpdatePostAsync(int id, UpdatePostDto postDto)
         {
             var userClaims = _httpContextAccessor.HttpContext?.User;
             var userId = userClaims!.FindFirstValue(ClaimTypes.NameIdentifier);
