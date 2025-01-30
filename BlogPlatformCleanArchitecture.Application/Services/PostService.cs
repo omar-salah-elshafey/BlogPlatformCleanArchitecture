@@ -136,7 +136,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = postDto.Content.Trim(),
                 CreatedDate = DateTime.Now.ToLocalTime()
             };
-
+            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
             post.ImageUrl = await HandleFileUpload(postDto.ImageFile, "image", string.Empty);
             post.VideoUrl = await HandleFileUpload(postDto.VideoFile, "video", string.Empty);
 
@@ -147,8 +147,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 AuthorName = authUserName,
                 Title = post.Title,
                 Content = post.Content,
-                ImageUrl = post.ImageUrl ?? string.Empty,
-                VideoUrl = post.VideoUrl ?? string.Empty,
+                ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
+                VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
                 CreatedDate = post.CreatedDate,
                 ModifiedDate = post.ModifiedDate,
                 Comments =  new List<PostCommentsModel>()
@@ -212,6 +212,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             }
 
             post.ModifiedDate = DateTime.Now.ToLocalTime();
+            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
             await _postRepository.UpdatePostAsync(post);
             return new PostResponseModel
             {
@@ -219,8 +220,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 AuthorName = authUserName,
                 Title = post.Title,
                 Content = post.Content,
-                ImageUrl = post.ImageUrl ?? string.Empty,
-                VideoUrl = post.VideoUrl ?? string.Empty,
+                ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
+                VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
                 CreatedDate = post.CreatedDate,
                 ModifiedDate = post.ModifiedDate,
                 Comments = post.Comments?.Select(c => new PostCommentsModel
