@@ -69,7 +69,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 throw new NullOrWhiteSpaceInputException("UserName can't be null!");
             var user = await _userManager.FindByNameAsync(userName);
             if (user == null || user.IsDeleted)
-                throw new UserNotFoundException("User Not Found!");
+                throw new NotFoundException("User Not Found!");
             var role = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
             return new UserDto
             {
@@ -123,11 +123,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var user = await _userManager.FindByNameAsync(changeRoleDto.UserName);
             if (user == null || user.IsDeleted)
-                throw new UserNotFoundException("Invalid UserName, User Not Found!");
+                throw new NotFoundException("Invalid UserName, User Not Found!");
             if (!await _roleManager.RoleExistsAsync(changeRoleDto.Role.ToLower()))
-                throw new UserNotFoundException("Invalid Role!");
+                throw new NotFoundException("Invalid Role!");
             if (await _userManager.IsInRoleAsync(user, changeRoleDto.Role.ToLower()))
-                throw new DuplicateUsernameException("User Is already assigned to this role!");
+                throw new DuplicateValueException("User Is already assigned to this role!");
             var currentrole = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
             await _userManager.RemoveFromRoleAsync(user, currentrole);
             var result = await _userManager.AddToRoleAsync(user, changeRoleDto.Role.ToLower());
@@ -143,7 +143,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             var currentUser = await _userManager.FindByNameAsync(CurrentUserName);
             var role = (await _userManager.GetRolesAsync(currentUser)).First().ToUpper();
             if (user is null || user.IsDeleted)
-                throw new UserNotFoundException("User Not Found!");
+                throw new NotFoundException("User Not Found!");
             if (!CurrentUserName.Equals(UserName) && role != "ADMIN")
                 throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
             _logger.LogWarning(CurrentUserName);
@@ -160,7 +160,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var user = await _userManager.FindByNameAsync(updateUserDto.UserName);
             if (user is null || user.IsDeleted == true)
-                throw new UserNotFoundException($"User with UserName: {updateUserDto.UserName} isn't found!");
+                throw new NotFoundException($"User with UserName: {updateUserDto.UserName} isn't found!");
             var userClaims = _httpContextAccessor.HttpContext?.User;
             var currentUserName = userClaims!.Identity?.Name;
             var currentUser = await _userManager.FindByNameAsync(currentUserName!);

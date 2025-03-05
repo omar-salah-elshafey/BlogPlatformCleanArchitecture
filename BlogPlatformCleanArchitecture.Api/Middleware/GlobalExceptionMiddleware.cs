@@ -19,15 +19,9 @@ namespace BlogPlatformCleanArchitecture.Api.Middleware
             {
                 await _next(context);
             }
-            catch (DuplicateEmailException ex)
+            catch (DuplicateValueException ex)
             {
-                _logger.LogWarning($"Duplicate email error: {ex.Message}");
-                context.Response.StatusCode = StatusCodes.Status409Conflict;
-                await context.Response.WriteAsJsonAsync(new { error = ex.Message });
-            }
-            catch (DuplicateUsernameException ex)
-            {
-                _logger.LogWarning($"Duplicate username error: {ex.Message}");
+                _logger.LogWarning($"Duplicate value error: {ex.Message}");
                 context.Response.StatusCode = StatusCodes.Status409Conflict;
                 await context.Response.WriteAsJsonAsync(new { error = ex.Message });
             }
@@ -43,7 +37,7 @@ namespace BlogPlatformCleanArchitecture.Api.Middleware
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 await context.Response.WriteAsJsonAsync(new { error = ex.Message });
             }
-            catch (UserNotFoundException ex)
+            catch (NotFoundException ex)
             {
                 _logger.LogWarning($"User not found: {ex.Message}");
                 context.Response.StatusCode = StatusCodes.Status404NotFound;

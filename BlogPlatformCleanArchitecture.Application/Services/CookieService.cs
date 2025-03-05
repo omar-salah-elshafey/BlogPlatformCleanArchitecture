@@ -17,32 +17,10 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             {
                 HttpOnly = true,
                 Expires = expires.ToLocalTime(),
-                Secure = true, // Set to true in production
+                Secure = true,
                 SameSite = SameSiteMode.Strict
             };
             _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
-        }
-
-        public void SetUserIdCookie(string userId)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, // Set to true in production
-                SameSite = SameSiteMode.Strict
-            };
-            _httpContextAccessor.HttpContext?.Response.Cookies.Append("userID", userId, cookieOptions);
-        }
-
-        public void SetUserNameCookie(string userName)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, // Set to true in production
-                SameSite = SameSiteMode.Strict
-            };
-            _httpContextAccessor.HttpContext?.Response.Cookies.Append("userName", userName, cookieOptions);
         }
 
         public void RemoveFromCookies(string key)
@@ -51,7 +29,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             {
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddDays(-1).ToLocalTime(),
-                Secure = true, // Set to true in production
+                Secure = true,
                 SameSite = SameSiteMode.Strict
             };
             _httpContextAccessor.HttpContext?.Response.Cookies.Append(key, "", cookieOptions);

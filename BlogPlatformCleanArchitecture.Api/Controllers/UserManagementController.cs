@@ -51,7 +51,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             return Ok(userProfile);
         }
 
-        [HttpGet("get-user-profile")]
+        [HttpGet("get-user-profile/{userName}")]
         [Authorize]
         public async Task<IActionResult> GetUserProfileAsync(string userName)
         {
@@ -80,7 +80,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             return Ok(new {message = $"User {changeUserRoleDto.UserName} has been assignd to Role {changeUserRoleDto.Role.ToUpper()} Successfully :)" });
         }
 
-        [HttpDelete("delete-user")]
+        [HttpDelete("delete-user/{UserName}")]
         [Authorize]
         public async Task<IActionResult> DeleteUserAsync(string UserName, string? refreshToken)
         {

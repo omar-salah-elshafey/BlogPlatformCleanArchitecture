@@ -41,7 +41,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         [HttpPost("reset-password-request")]
         public async Task<IActionResult> ResetPasswordRequestAsync(string email)
         {
-            _logger.LogError("This is from the full"+email);
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
             await _passwordManagementService.ResetPasswordRequestAsync(email);
@@ -53,7 +52,6 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            // Call the service to verify the email
             await _passwordManagementService.VerifyResetPasswordTokenAsync(confirmEmailDto);
 
             return Ok(new { Message = "Your Password reset request is verified." });

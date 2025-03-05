@@ -76,13 +76,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             var user = await _userManager.FindByNameAsync(loginDto.EmailOrUserName)
                ?? await _userManager.FindByEmailAsync(loginDto.EmailOrUserName);
 
-            //if (!string.IsNullOrEmpty(result.RefreshToken))
-            //{
-            //    _cookieService.SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpiresOn);
-            //}
             _cookieService.SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpiresOn);
-            _cookieService.SetUserIdCookie(user!.Id);
-            _cookieService.SetUserNameCookie(user.UserName!);
             return Ok(new
             {
                 result.AccessToken,

@@ -44,10 +44,10 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _logger.LogWarning("Registering a new user...");
             
             if (await _userManager.FindByEmailAsync(registrationDto.Email) is not null)
-                throw new DuplicateEmailException("This Email is already used!");
+                throw new DuplicateValueException("This Email is already used!");
 
             if (await _userManager.FindByNameAsync(registrationDto.UserName) is not null)
-                throw new DuplicateUsernameException("This Username is already used!");
+                throw new DuplicateValueException("This Username is already used!");
 
             var user = new ApplicationUser
             {
@@ -97,7 +97,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (user.IsDeleted)
             {
                 _logger.LogWarning("User Not Found!");
-                throw new UserNotFoundException("User Not Found!");
+                throw new NotFoundException("User Not Found!");
             }
             if (!user.EmailConfirmed){
                 _logger.LogWarning("Please Confirm Your Email First.");

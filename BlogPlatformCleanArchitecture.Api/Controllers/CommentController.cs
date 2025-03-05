@@ -52,14 +52,14 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             return Ok(paginatedComments);
         }
 
-        [HttpGet("get-comments-by-user")]
+        [HttpGet("get-comments-by-user/{UserName}")]
         public async Task<IActionResult> GetCommentsByUserAsync(string UserName, int pageNumber = 1, int pageSize = 5)
         {
             var paginatedComments = await _commentService.GetCommentsByUserAsync(UserName, pageNumber, pageSize);
             return Ok(paginatedComments);
         }
 
-        [HttpGet("get-comments-by-post")]
+        [HttpGet("get-comments-by-post/{postId}")]
         public async Task<IActionResult> GetCommentsByPostAsync(int postId, int pageNumber = 1, int pageSize = 5)
         {
             var paginatedComments = await _commentService.GetCommentsByPostAsync(postId, pageNumber, pageSize);
@@ -67,7 +67,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("update-comment")]
+        [HttpPut("update-comment/{id}")]
         public async Task<IActionResult> UpdateCommentAsync(int id, CommentDto commentDto)
         {
             var userClaims = _httpContextAccessor.HttpContext?.User;
@@ -78,7 +78,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [Authorize]
-        [HttpDelete("delete-comment")]
+        [HttpDelete("delete-comment/{id}")]
         public async Task<IActionResult> DeleteCommentAsync(int id)
         {
             var userClaims = _httpContextAccessor.HttpContext?.User;

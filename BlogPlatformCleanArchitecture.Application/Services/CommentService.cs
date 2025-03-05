@@ -57,7 +57,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var user = await _userManager.FindByNameAsync(UserName);
             if (user == null)
-                throw new UserNotFoundException($"No user was found with this userName: {UserName}");
+                throw new NotFoundException($"No user was found with this userName: {UserName}");
             var paginatedComments = await _commentRepository.GetCommentsByUserAsync(UserName, pageNumber, pageSize);
             var commentResponses = paginatedComments.Items.Select(c => new CommentResponseModel
             {
@@ -79,7 +79,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var post = await _postRepository.GetPostByIdAsync(postId);
             if (post == null)
-                throw new UserNotFoundException($"No posts were found with this ID: {postId}");
+                throw new NotFoundException($"No posts were found with this ID: {postId}");
             var paginatedComments = await _commentRepository.GetCommentsByPostAsync(postId, pageNumber, pageSize);
             var commentResponses = paginatedComments.Items.Select(c => new CommentResponseModel
             {
@@ -104,7 +104,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _logger.LogWarning($"{commentDto.PostId}");
             var post = await _postRepository.GetPostByIdAsync(commentDto.PostId);
             if (post == null)
-                throw new UserNotFoundException($"No posts were found with this ID: {commentDto.PostId}");
+                throw new NotFoundException($"No posts were found with this ID: {commentDto.PostId}");
             if(string.IsNullOrWhiteSpace(commentDto.content))
                 throw new NullOrWhiteSpaceInputException("Content can't be null");
             var comment = new Comment
@@ -129,10 +129,10 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var comment = await _commentRepository.GetCommentByIdAsync(id);
             if (comment == null) 
-                throw new UserNotFoundException($"No comments were found with this ID: {id}");
+                throw new NotFoundException($"No comments were found with this ID: {id}");
             var post = await _postRepository.GetPostByIdAsync(comment.PostId);
             if (post == null) 
-                throw new UserNotFoundException($"No posts were found with this ID: {comment.PostId}");
+                throw new NotFoundException($"No posts were found with this ID: {comment.PostId}");
             var user = await _userManager.FindByIdAsync(userId);
             var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
             if (!isAdmin && comment.UserId != userId && post.AuthorId != userId)
@@ -144,7 +144,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var comment = await _commentRepository.GetCommentByIdAsync(id);
             if (comment == null)
-                throw new UserNotFoundException($"No comments were found with this ID: {id}");
+                throw new NotFoundException($"No comments were found with this ID: {id}");
             if (comment.UserId != userId)
                 throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
             if (string.IsNullOrWhiteSpace(commentDto.content))

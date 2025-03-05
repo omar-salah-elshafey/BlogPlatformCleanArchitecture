@@ -43,7 +43,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             {
                 Id = p.Id,
                 AuthorName = p.Author.IsDeleted ? "Deleted Account" : p.Author.UserName,
-                Title = p.Title,
                 Content = p.Content,
                 ImageUrl = !string.IsNullOrEmpty(p.ImageUrl) ? $"{baseUrl}{p.ImageUrl}" : string.Empty,
                 VideoUrl = !string.IsNullOrEmpty(p.VideoUrl) ? $"{baseUrl}{p.VideoUrl}" : string.Empty,
@@ -73,7 +72,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var post = await _postRepository.GetPostByIdAsync(id);
             if (post == null)
-                throw new UserNotFoundException("Post Not Found!");
+                throw new NotFoundException("Post Not Found!");
 
             string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
 
@@ -81,7 +80,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             {
                 Id = post.Id,
                 AuthorName = post.Author.IsDeleted ? "Deleted Account" : post.Author.UserName,
-                Title = post.Title,
                 Content = post.Content,
                 ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
                 VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
@@ -93,14 +91,13 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<PaginatedResponseModel<PostResponseModel>> GetPostsByUserAsync(string userName, int pageNumber, int pageSize)
         {
             var user = await _userManager.FindByNameAsync(userName);
-            if (user == null || user.IsDeleted) throw new UserNotFoundException("User Not Found!");
+            if (user == null || user.IsDeleted) throw new NotFoundException("User Not Found!");
             var paginatedPosts = await _postRepository.GetPostsByUserAsync(userName, pageNumber, pageSize);
             string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
             var postResponses = paginatedPosts.Items.Select(p => new PostResponseModel
             {
                 Id = p.Id,
                 AuthorName = p.Author.UserName,
-                Title = p.Title,
                 Content = p.Content,
                 ImageUrl = !string.IsNullOrEmpty(p.ImageUrl) ? $"{baseUrl}{p.ImageUrl}" : string.Empty,
                 VideoUrl = !string.IsNullOrEmpty(p.VideoUrl) ? $"{baseUrl}{p.VideoUrl}" : string.Empty,
@@ -127,12 +124,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
 
         public async Task<PostResponseModel> CreatePostAsync(PostDto postDto, string authId, string authUserName)
         {
-            if (string.IsNullOrWhiteSpace(postDto.Title) || string.IsNullOrWhiteSpace(postDto.Content))
-                throw new NullOrWhiteSpaceInputException("Title or Content cannot be empty!");
+            if (string.IsNullOrWhiteSpace(postDto.Content))
+                throw new NullOrWhiteSpaceInputException("Content cannot be empty!");
             var post = new Post
             {
                 AuthorId = authId,
-                Title = postDto.Title.Trim(),
                 Content = postDto.Content.Trim(),
                 CreatedDate = DateTime.Now.ToLocalTime()
             };
@@ -145,7 +141,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             {
                 Id = post.Id,
                 AuthorName = authUserName,
-                Title = post.Title,
                 Content = post.Content,
                 ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
                 VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
@@ -159,12 +154,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var post = await _postRepository.GetPostByIdAsync(id);
             if (post == null)
-                throw new UserNotFoundException("Post Not Found!");
+                throw new NotFoundException("Post Not Found!");
             if (post.AuthorId != userId)
                 throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
-            if(string.IsNullOrWhiteSpace(postDto.Title) || string.IsNullOrWhiteSpace(postDto.Content))
-                throw new NullOrWhiteSpaceInputException("Title or Content cannot be empty!");
-            post.Title = postDto.Title.Trim();
+            if(string.IsNullOrWhiteSpace(postDto.Content))
+                throw new NullOrWhiteSpaceInputException("Content cannot be empty!");
             post.Content = postDto.Content.Trim();
 
             post.ImageUrl = await HandleFileUpload(postDto.ImageFile, "image", post.ImageUrl);
@@ -218,7 +212,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             {
                 Id = post.Id,
                 AuthorName = authUserName,
-                Title = post.Title,
                 Content = post.Content,
                 ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
                 VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
@@ -240,7 +233,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
             var post = await _postRepository.GetPostByIdAsync(id);
             if (post == null)
-                throw new UserNotFoundException("Post Not Found!");
+                throw new NotFoundException("Post Not Found!");
             if (!isAdmin && post.AuthorId != userId)
                 throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
             await _postRepository.DeletePostAsync(id);

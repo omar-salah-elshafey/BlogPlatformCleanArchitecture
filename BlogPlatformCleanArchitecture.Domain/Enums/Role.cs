@@ -3,7 +3,7 @@
     public enum Role
     {
         Reader,
-        Author,
+        Writer,
         Admin
     }
 }

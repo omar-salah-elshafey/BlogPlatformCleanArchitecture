@@ -31,7 +31,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (user == null || user.IsDeleted)
             {
                 _logger.LogError("User not found, Email is incorrect!");
-                throw new UserNotFoundException("User not found, Email is incorrect!");
+                throw new NotFoundException("User not found, Email is incorrect!");
             }
                 
 
@@ -52,7 +52,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (user == null || user.IsDeleted)
             {
                 _logger.LogWarning("User not found, Email is incorrect!");
-                throw new UserNotFoundException("User not found, Email is incorrect!");
+                throw new NotFoundException("User not found, Email is incorrect!");
             }
 
             if (changePasswordDto.CurrentPassword.Trim().Equals(changePasswordDto.NewPassword.Trim()))
@@ -75,7 +75,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (user is null || user.IsDeleted)
             {
                 _logger.LogWarning("User not found, Email is incorrect!");
-                throw new UserNotFoundException("User not found, Email is incorrect!");
+                throw new NotFoundException("User not found, Email is incorrect!");
             }
             //generating the token to verify the user's email
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -94,7 +94,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (user == null || user.IsDeleted)
             {
                 _logger.LogWarning("User not found, Email is incorrect!");
-                throw new UserNotFoundException("User not found, Email is incorrect!");
+                throw new NotFoundException("User not found, Email is incorrect!");
             }
             var result = await _userManager.VerifyUserTokenAsync(user, 
                 _userManager.Options.Tokens.PasswordResetTokenProvider, "ResetPassword", confirmEmailDto.Token);

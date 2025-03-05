@@ -59,7 +59,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (user == null || user.IsDeleted)
             {
                 _logger.LogError("User not found.");
-                throw new UserNotFoundException("User not found.");
+                throw new NotFoundException("User not found.");
             }
                 
 
@@ -93,7 +93,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (user == null || user.IsDeleted)
             {
                 _logger.LogError("User not found.");
-                throw new UserNotFoundException("User not found.");
+                throw new NotFoundException("User not found.");
             }
                 
 

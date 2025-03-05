@@ -27,7 +27,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpPost("create-post")]
-        [Authorize(Roles = "Author, Admin")]
+        [Authorize(Roles = "Writer, Admin")]
         public async Task<IActionResult> CreatePostAsync(PostDto postDto)
         {
             var userClaims = _httpContextAccessor.HttpContext?.User;
@@ -52,22 +52,22 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             return Ok(paginatedPosts );
         }
 
-        [HttpGet("get-posts-by-user")]
+        [HttpGet("get-posts-by-user/{UserName}")]
         public async Task<IActionResult> GetPostsByUserAsync(string UserName, int pageNumber = 1, int pageSize = 5)
         {
             var paginatedPosts = await _postService.GetPostsByUserAsync(UserName, pageNumber, pageSize);
             return Ok(paginatedPosts );
         }
 
-        [HttpGet("get-post-by-id")]
+        [HttpGet("get-post-by-id/{id}")]
         public async Task<IActionResult> GetPostByIdAsync(int id)
         {
             var post = await _postService.GetPostByIdAsync(id);
             return Ok(post);
         }
 
-        [HttpPut("update-post")]
-        [Authorize(Roles = "Author, Admin")]
+        [HttpPut("update-post/{id}")]
+        [Authorize(Roles = "Writer, Admin")]
         public async Task<IActionResult> UpdatePostAsync(int id, UpdatePostDto postDto)
         {
             var userClaims = _httpContextAccessor.HttpContext?.User;
@@ -77,8 +77,8 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             return Ok(UpdatedPost);
         }
 
-        [HttpDelete("delete-post")]
-        [Authorize(Roles = "Author, Admin")]
+        [HttpDelete("delete-post/{id}")]
+        [Authorize(Roles = "Writer, Admin")]
         public async Task<IActionResult> DeletePost(int id)
         {
             var userClaims = _httpContextAccessor.HttpContext?.User;
