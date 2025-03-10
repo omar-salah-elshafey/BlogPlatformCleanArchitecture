@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using BlogPlatformCleanArchitecture.Domain.Entities;
+using System.Reflection.Emit;
 
 namespace BlogPlatformCleanArchitecture.Infrastructure.Data
 {
@@ -10,6 +11,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
         public DbSet<Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
+        public DbSet<PostLike> PostLikes { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -22,6 +24,19 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Data
                     RoleId = "a331b209-871f-45fc-9a8d-f357f9bff3b1"  // Admin role ID
                 }
             );
+            builder.Entity<PostLike>()
+                .HasKey(pl => pl.Id);
+            builder.Entity<PostLike>()
+                .HasIndex(pl => new { pl.PostId, pl.UserId })
+                .IsUnique();
+            builder.Entity<PostLike>()
+                .HasOne(pl => pl.Post)
+                .WithMany(p => p.Likes)
+                .HasForeignKey(pl => pl.PostId);
+            builder.Entity<PostLike>()
+                .HasOne(pl => pl.User)
+                .WithMany()
+                .HasForeignKey(pl => pl.UserId);
         }
 
         private static void seedRoles(ModelBuilder modelBuilder)

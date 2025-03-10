@@ -23,6 +23,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.DependencyInjection
             // services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
+            services.AddScoped<IPostLikeRepository, PostLikeRepository>();
 
             // Register application services, e.g., AuthService
             services.AddScoped<IAuthService, AuthService>();
@@ -33,6 +34,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.DependencyInjection
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<ICookieService, CookieService>();
+            services.AddScoped<IPostLikeService, PostLikeService>();
             return services;
         }
     }
