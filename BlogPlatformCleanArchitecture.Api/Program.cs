@@ -85,23 +85,28 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 });
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader());
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.SetIsOriginAllowed(origin => true)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
 });
+builder.Configuration.AddUserSecrets<Program>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    builder.Configuration.AddUserSecrets<Program>();
+    
     app.UseSwagger();
     app.UseSwaggerUI(); 
-    app.UseCors("AllowAll");
-    app.UseMiddleware<GlobalExceptionMiddleware>();
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

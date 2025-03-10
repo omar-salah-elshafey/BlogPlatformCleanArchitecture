@@ -76,6 +76,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             var newRefreshToken = await GenerateRefreshToken();
             user.RefreshTokens.Add(newRefreshToken);
             await _userManager.UpdateAsync(user);
+            await RemoveInactiveRefreshTokens(user);
 
             var jwtToken = await CreateJwtTokenAsync(user);
             authResponseModel.AccessToken = new JwtSecurityTokenHandler().WriteToken(jwtToken);
@@ -122,11 +123,16 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             return new RefreshToken
             {
                 createdOn = DateTime.UtcNow.ToLocalTime(),
-                ExpiresOn = DateTime.Now.AddDays(1),
+                ExpiresOn = DateTime.Now.AddDays(7),
                 Token = Convert.ToBase64String(randomNumber)
             };
         }
 
+        public async Task RemoveInactiveRefreshTokens(ApplicationUser user)
+        {
+            user.RefreshTokens.RemoveAll(t => !t.IsActive);
+            await _userManager.UpdateAsync(user);
+        }
 
     }
 }

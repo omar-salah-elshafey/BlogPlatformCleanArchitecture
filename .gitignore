@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 BlogPlatformCleanArchitecture.Api/wwwroot/
+/ngrok.exe

@@ -10,5 +10,6 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
         Task<AuthResponseModel> RefreshTokenAsync(string token);
         Task RevokeRefreshTokenAsync(string token);
         Task<RefreshToken> GenerateRefreshToken();
+        Task RemoveInactiveRefreshTokens(ApplicationUser user);
     }
 }

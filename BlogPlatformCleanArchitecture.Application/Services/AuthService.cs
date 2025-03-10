@@ -54,9 +54,9 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 FirstName = registrationDto.FirstName,
                 LastName = registrationDto.LastName,
                 UserName = registrationDto.UserName,
-                Email = registrationDto.Email
+                Email = registrationDto.Email,
+                EmailConfirmed = true
             };
-            _logger.LogWarning($"user {user.UserName}, {user.FirstName}, {user.LastName}, {user.Email}");
             var result = await _userManager.CreateAsync(user, registrationDto.Password);
             if (!result.Succeeded)
             {
@@ -66,21 +66,12 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             
             await _userManager.AddToRoleAsync(user, registrationDto.Role.ToString());
 
-            //generating the token to verify the user's email
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-
-            // Dynamically get the expiration time from the options
-            var expirationTime = _tokenProviderOptions.Value.TokenLifespan.TotalMinutes;
-
-            await _emailService.SendEmailAsync(user.Email, "Email Verification Code.",
-                $"Hello {user.UserName}, Use this new token to verify your Email: {token}{Environment.NewLine}This code is Valid only for {expirationTime} Minutes.");
             _logger.LogInformation($"User with Email {user.Email} has been created Successfully!");
             return new AuthResponseModel
             {
                 Email = user.Email,
                 Username = user.UserName,
                 Role = registrationDto.Role.ToString(),
-                Message = $"A verification code has been sent to your Email. Verify Your Email to be able to login :) "
             };
         }
 
@@ -89,15 +80,10 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             var authResponseModel = new AuthResponseModel();
             var user = await _userManager.FindByNameAsync(loginDto.EmailOrUserName)
                ?? await _userManager.FindByEmailAsync(loginDto.EmailOrUserName); //check if the user exists
-            if (user == null || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
+            if (user == null || user.IsDeleted || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
             {
                 _logger.LogWarning("Invalid Email or Password!");
                 throw new InvalidCredentialsException("Invalid Email or Password!");                
-            }
-            if (user.IsDeleted)
-            {
-                _logger.LogWarning("User Not Found!");
-                throw new NotFoundException("User Not Found!");
             }
             if (!user.EmailConfirmed){
                 _logger.LogWarning("Please Confirm Your Email First.");
@@ -115,15 +101,13 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             authResponseModel.IsConfirmed = true;
             user.IsActive = true;
 
-            //checj if the user already has an active refresh token
             if (!user.RefreshTokens.Any(t => t.IsActive))
             {
-                // Generate a new refresh token and add it to the user's tokens
+                await _tokenService.RemoveInactiveRefreshTokens(user);
                 var refreshToken = await _tokenService.GenerateRefreshToken();
                 user.RefreshTokens.Add(refreshToken);
                 await _userManager.UpdateAsync(user);
 
-                // Send the refresh token along with the JWT token
                 authResponseModel.RefreshToken = refreshToken.Token;
                 authResponseModel.RefreshTokenExpiresOn = refreshToken.ExpiresOn;
             }
