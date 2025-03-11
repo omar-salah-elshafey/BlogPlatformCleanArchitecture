@@ -27,7 +27,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpPost("create-post")]
-        [Authorize(Roles = "Writer, Admin")]
+        [Authorize(Roles = "Writer, Admin, SuperAdmin")]
         public async Task<IActionResult> CreatePostAsync(PostDto postDto)
         {
             var userClaims = _httpContextAccessor.HttpContext?.User;
@@ -38,7 +38,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpGet("get-posts-count")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SuperAdmin")]
         public async Task<IActionResult> GetPostsCountAsync()
         {
             var postsCount = await _postService.GetPostsCountAsync();
@@ -67,7 +67,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpPut("update-post/{id}")]
-        [Authorize(Roles = "Writer, Admin")]
+        [Authorize(Roles = "Writer, Admin, SuperAdmin")]
         public async Task<IActionResult> UpdatePostAsync(int id, UpdatePostDto postDto)
         {
             var userClaims = _httpContextAccessor.HttpContext?.User;
@@ -78,7 +78,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpDelete("delete-post/{id}")]
-        [Authorize(Roles = "Writer, Admin")]
+        [Authorize(Roles = "Writer, Admin, SuperAdmin")]
         public async Task<IActionResult> DeletePost(int id)
         {
             var userClaims = _httpContextAccessor.HttpContext?.User;

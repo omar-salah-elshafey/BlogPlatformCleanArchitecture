@@ -12,20 +12,16 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
     [ApiController]
     public class UserManagementController : ControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUserManagementService _userManagementService;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public UserManagementController(UserManager<ApplicationUser> userManager,
-            IUserManagementService userManagementService,
-            IHttpContextAccessor httpContextAccessor)
+        public UserManagementController(IUserManagementService userManagementService, IHttpContextAccessor httpContextAccessor)
         {
-            _userManager = userManager;
             _userManagementService = userManagementService;
             _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpGet("get-users-count")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SuperAdmin")]
         public async Task<IActionResult> GetUsersCountAsync()
         {
             var usersCount = await _userManagementService.GetUsersCountAsync();
@@ -33,7 +29,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpGet("get-all-users")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SuperAdmin")]
         public async Task<IActionResult> GetUsersAsync(int pageNumber = 1, int pageSize = 10)
         {
             var users = await _userManagementService.GetUSersAsync(pageNumber, pageSize);
@@ -70,7 +66,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
 
 
         [HttpPut("change-role")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SuperAdmin")]
         public async Task<IActionResult> AddRoleAsync(ChangeUserRoleDto changeUserRoleDto)
         {
             if (!ModelState.IsValid)
@@ -80,16 +76,16 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             return Ok(new {message = $"User {changeUserRoleDto.UserName} has been assignd to Role {changeUserRoleDto.Role.ToUpper()} Successfully :)" });
         }
 
-        [HttpDelete("delete-user/{UserName}")]
+        [HttpDelete("delete-user")]
         [Authorize]
-        public async Task<IActionResult> DeleteUserAsync(string UserName, string? refreshToken)
+        public async Task<IActionResult> DeleteUserAsync(DeleteUserDto deleteUserDto)
         {
-            if(refreshToken == null)
-                refreshToken = Request.Cookies["refreshToken"];
+            if(deleteUserDto.RefreshToken == null)
+                deleteUserDto.RefreshToken = Request.Cookies["refreshToken"];
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            await _userManagementService.DeleteUserAsync(UserName, refreshToken);
-            return Ok(new {message= $"User with UserName: '{UserName}' has been Deleted successfully" });
+            await _userManagementService.DeleteUserAsync(deleteUserDto.UserName, deleteUserDto.RefreshToken, deleteUserDto.Password);
+            return Ok(new {message= $"User with UserName: '{deleteUserDto.UserName}' has been Deleted successfully" });
         }
 
         [HttpPut("update-user")]

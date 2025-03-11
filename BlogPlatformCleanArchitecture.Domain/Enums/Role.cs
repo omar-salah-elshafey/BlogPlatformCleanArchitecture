@@ -4,6 +4,7 @@
     {
         Reader,
         Writer,
-        Admin
+        Admin,
+        SuperAdmin,
     }
 }

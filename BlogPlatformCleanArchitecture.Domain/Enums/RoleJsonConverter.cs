@@ -13,7 +13,7 @@ namespace BlogPlatformCleanArchitecture.Domain.Enums
                 return validRole;
             }
 
-            throw new JsonException($"Invalid role: {roleValue}. Allowed values are Reader, Author, and Admin.");
+            throw new JsonException($"Invalid role: {roleValue}. Allowed values are Reader, Author, Admin, and SuperAdmin.");
         }
 
         public override void Write(Utf8JsonWriter writer, Role value, JsonSerializerOptions options)

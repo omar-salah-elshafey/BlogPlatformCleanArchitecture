@@ -49,7 +49,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             });
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SuperAdmin")]
         [HttpPost("add-user")]
         public async Task<IActionResult> AddUserAsync([FromBody] RegistrationDto registrationDto)
         {

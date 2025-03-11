@@ -230,7 +230,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task DeletePostAsync(int id, string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin")
+                || await _userManager.IsInRoleAsync(user, "SuperAdmin");
             var post = await _postRepository.GetPostByIdAsync(id);
             if (post == null)
                 throw new NotFoundException("Post Not Found!");

@@ -43,7 +43,8 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Data
         {
             modelBuilder.Entity<IdentityRole>().HasData(
                 new IdentityRole() { Id = "a331b209-871f-45fc-9a8d-f357f9bff3b1", Name = "Admin", ConcurrencyStamp = "1", NormalizedName = "Admin".ToUpper() },
-                new IdentityRole() { Id = "b330b209-871f-45fc-9a8d-f357f9bff3b1", Name = "User", ConcurrencyStamp = "2", NormalizedName = "User".ToUpper() }
+                new IdentityRole() { Id = "b330b209-871f-45fc-9a8d-f357f9bff3b1", Name = "User", ConcurrencyStamp = "2", NormalizedName = "User".ToUpper() },
+                new IdentityRole() { Id = "d331b209-871f-45fc-9a8d-f357f9bff3b1", Name = "SuperAdmin", ConcurrencyStamp = "4", NormalizedName = "SuperAdmin".ToUpper() }
                 );
         }
 

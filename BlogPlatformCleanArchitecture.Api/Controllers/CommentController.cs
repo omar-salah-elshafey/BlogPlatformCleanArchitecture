@@ -38,7 +38,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpGet("get-comments-count")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SuperAdmin")]
         public async Task<IActionResult> GetCommentsCountAsync()
         {
             var commentsCount = await _commentService.GetCommentsCountAsync();

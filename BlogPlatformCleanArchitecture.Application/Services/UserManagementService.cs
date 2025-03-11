@@ -7,6 +7,7 @@ using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using BlogPlatformCleanArchitecture.Domain.Enums;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -118,66 +119,85 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             };
         }
 
-
         public async Task ChangeRoleAsync(ChangeUserRoleDto changeRoleDto)
         {
-            var user = await _userManager.FindByNameAsync(changeRoleDto.UserName);
-            if (user == null || user.IsDeleted)
+            var targetUser = await _userManager.FindByNameAsync(changeRoleDto.UserName);
+            if (targetUser == null || targetUser.IsDeleted)
                 throw new NotFoundException("Invalid UserName, User Not Found!");
-            if (!await _roleManager.RoleExistsAsync(changeRoleDto.Role.ToLower()))
+
+            if (!await _roleManager.RoleExistsAsync(changeRoleDto.Role))
                 throw new NotFoundException("Invalid Role!");
-            if (await _userManager.IsInRoleAsync(user, changeRoleDto.Role.ToLower()))
-                throw new DuplicateValueException("User Is already assigned to this role!");
-            var currentrole = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
-            await _userManager.RemoveFromRoleAsync(user, currentrole);
-            var result = await _userManager.AddToRoleAsync(user, changeRoleDto.Role.ToLower());
+
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var currentUserName = userClaims!.Identity?.Name;
+            var currentUser = await _userManager.FindByNameAsync(currentUserName!);
+
+            await AuthorizeRoleChangeAsync(currentUser!, targetUser, changeRoleDto, currentUserName!);
+
+            if (await _userManager.IsInRoleAsync(targetUser, changeRoleDto.Role))
+                throw new DuplicateValueException("User is already assigned to this role!");
+
+            var currentRole = (await _userManager.GetRolesAsync(targetUser)).FirstOrDefault();
+            if (!string.IsNullOrEmpty(currentRole)) await _userManager.RemoveFromRoleAsync(targetUser, currentRole);
+
+            await _userManager.AddToRoleAsync(targetUser, changeRoleDto.Role);
+
+            _logger.LogInformation($"User {targetUser.UserName}'s role changed to {changeRoleDto.Role} by {currentUserName}");
         }
 
-        public async Task DeleteUserAsync(string UserName, string refreshToken)
+        public async Task DeleteUserAsync(string userName, string? refreshToken, string? password)
         {
-            _logger.LogWarning(UserName);
-            _logger.LogWarning(refreshToken);
-            var user = await _userManager.FindByNameAsync(UserName);
-            var userClaims = _httpContextAccessor.HttpContext?.User;
-            var CurrentUserName = userClaims!.Identity?.Name;
-            var currentUser = await _userManager.FindByNameAsync(CurrentUserName);
-            var role = (await _userManager.GetRolesAsync(currentUser)).First().ToUpper();
-            if (user is null || user.IsDeleted)
+            var targetUser = await _userManager.FindByNameAsync(userName);
+            if (targetUser is null || targetUser.IsDeleted)
                 throw new NotFoundException("User Not Found!");
-            if (!CurrentUserName.Equals(UserName) && role != "ADMIN")
-                throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
-            _logger.LogWarning(CurrentUserName);
-            _logger.LogWarning(currentUser.ToString());
-            user.IsDeleted = true;
-            var result = await _userManager.UpdateAsync(user);
+
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var currentUserName = userClaims!.Identity?.Name;
+            var currentUser = await _userManager.FindByNameAsync(currentUserName!);
+
+            await AuthorizeDeletionAsync(currentUser!, targetUser, userName, currentUserName!);
+
+            bool isSelfDelete = currentUserName!.Equals(userName);
+            if (isSelfDelete)
+            {
+                if (string.IsNullOrEmpty(password))
+                    throw new InvalidInputsException("Password is required to delete your own account!");
+                if (!await _userManager.CheckPasswordAsync(currentUser!, password))
+                    throw new InvalidInputsException("Incorrect password provided!");
+            }
+
+            _logger.LogWarning($"{currentUserName} is deleting {userName}");
+            targetUser.IsDeleted = true;
+            var result = await _userManager.UpdateAsync(targetUser);
+
             if (!result.Succeeded)
-                throw new Exception($"An Error Occured while Deleting the user{UserName}");
-            if (UserName == CurrentUserName)
-                await _authService.LogoutAsync(refreshToken);
+                throw new Exception($"An error occurred while deleting the user {userName}");
+
+            if (userName == currentUserName)
+                await _authService.LogoutAsync(refreshToken!);
         }
 
         public async Task<UpdateUserResponseModel> UpdateUserAsync(UpdateUserDto updateUserDto)
         {
-            var user = await _userManager.FindByNameAsync(updateUserDto.UserName);
-            if (user is null || user.IsDeleted == true)
+            var targetUser = await _userManager.FindByNameAsync(updateUserDto.UserName);
+            if (targetUser is null || targetUser.IsDeleted == true)
                 throw new NotFoundException($"User with UserName: {updateUserDto.UserName} isn't found!");
-            var userClaims = _httpContextAccessor.HttpContext?.User;
+
+            var userClaims = _httpContextAccessor.HttpContext.User;
             var currentUserName = userClaims!.Identity?.Name;
             var currentUser = await _userManager.FindByNameAsync(currentUserName!);
-            var isAdmin = await _userManager.IsInRoleAsync(currentUser!, "Admin");
-            if (!currentUserName!.Equals(updateUserDto.UserName) && !isAdmin)
-            {
-                _logger.LogError("You aren't Authorized to do this Action!");
-                throw new ForbiddenAccessException("You aren't Authenticated to do this Action!");
-            }
-            user.FirstName = updateUserDto.FirstName;
-            user.LastName = updateUserDto.LastName;
-            var result = await _userManager.UpdateAsync(user);
+
+            await AuthorizeUpdateAsync(currentUser!, targetUser, updateUserDto.UserName, currentUserName!);
+
+            targetUser.FirstName = updateUserDto.FirstName;
+            targetUser.LastName = updateUserDto.LastName;
+            var result = await _userManager.UpdateAsync(targetUser);
             if (!result.Succeeded)
             {
                 var errors = string.Join(Environment.NewLine, result.Errors.Select(e => e.Description));
                 throw new Exception($"Failed to update user: {errors}");
             }
+
             _logger.LogInformation("User has been updated Successfully.");
             return new UpdateUserResponseModel
             {
@@ -186,6 +206,63 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 LastName = updateUserDto.LastName,
                 Message = "User has been updated Successfully."
             };
+        }
+
+        private async Task AuthorizeRoleChangeAsync(ApplicationUser currentUser, ApplicationUser targetUser,
+            ChangeUserRoleDto changeRoleDto, string currentUserName)
+        {
+            var isAdmin = await _userManager.IsInRoleAsync(currentUser, "Admin");
+            var isSuperAdmin = await _userManager.IsInRoleAsync(currentUser, "SuperAdmin");
+            var isTargetSuperAdmin = await _userManager.IsInRoleAsync(targetUser, "SuperAdmin");
+            var isTargetAdmin = await _userManager.IsInRoleAsync(targetUser, "Admin");
+            bool isSelfChange = currentUserName.Equals(changeRoleDto.UserName);
+
+            if (isAdmin && (isTargetSuperAdmin || isTargetAdmin))
+                throw new ForbiddenAccessException("Admins cannot change roles of SuperAdmins or other Admins!");
+            if (isAdmin && changeRoleDto.Role != Role.Reader.ToString() && changeRoleDto.Role != Role.Writer.ToString())
+                throw new ForbiddenAccessException("Admins can only assign Reader or Writer roles!");
+
+            if (isSuperAdmin && (isSelfChange || isTargetSuperAdmin))
+                throw new ForbiddenAccessException("SuperAdmins cannot change their own role or other SuperAdmins' roles!");
+        }
+
+        private async Task AuthorizeUpdateAsync(ApplicationUser currentUser, ApplicationUser targetUser,
+            string targetUserName, string currentUserName)
+        {
+            var isAdmin = await _userManager.IsInRoleAsync(currentUser, "Admin");
+            var isSuperAdmin = await _userManager.IsInRoleAsync(currentUser, "SuperAdmin");
+            var isTargetSuperAdmin = await _userManager.IsInRoleAsync(targetUser, "SuperAdmin");
+            var isTargetAdmin = await _userManager.IsInRoleAsync(targetUser, "Admin");
+
+            bool isSelfUpdate = currentUserName.Equals(targetUserName);
+
+            if (isSelfUpdate)
+                return;
+
+            if (isAdmin && (isTargetSuperAdmin || isTargetAdmin))
+                throw new ForbiddenAccessException("Admins cannot modify SuperAdmins or other Admins!");
+            if (!isAdmin && !isSuperAdmin)
+                throw new ForbiddenAccessException("You aren't authorized to perform this action!");
+        }
+
+        private async Task AuthorizeDeletionAsync(ApplicationUser currentUser, ApplicationUser targetUser,
+            string userName, string currentUserName)
+        {
+            var isAdmin = await _userManager.IsInRoleAsync(currentUser, "Admin");
+            var isSuperAdmin = await _userManager.IsInRoleAsync(currentUser, "SuperAdmin");
+            var isTargetSuperAdmin = await _userManager.IsInRoleAsync(targetUser, "SuperAdmin");
+            var isTargetAdmin = await _userManager.IsInRoleAsync(targetUser, "Admin");
+
+            bool isSelfDelete = currentUserName.Equals(userName);
+
+            if (isSuperAdmin && isSelfDelete)
+                throw new ForbiddenAccessException("SuperAdmins cannot delete their own account!");
+            if (isSuperAdmin && isTargetSuperAdmin)
+                throw new ForbiddenAccessException("SuperAdmins cannot delete other SuperAdmins!");
+            if (isAdmin && (isTargetSuperAdmin || isTargetAdmin) && !isSelfDelete)
+                throw new ForbiddenAccessException("Admins cannot delete SuperAdmins or other Admins!");
+            if (!isAdmin && !isSuperAdmin && !isSelfDelete)
+                throw new ForbiddenAccessException("You aren't authorized to perform this action!");
         }
     }
 }

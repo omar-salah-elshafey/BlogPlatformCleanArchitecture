@@ -134,7 +134,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (post == null) 
                 throw new NotFoundException($"No posts were found with this ID: {comment.PostId}");
             var user = await _userManager.FindByIdAsync(userId);
-            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin") 
+                || await _userManager.IsInRoleAsync(user, "SuperAdmin");
             if (!isAdmin && comment.UserId != userId && post.AuthorId != userId)
                 throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
             await _commentRepository.DeleteCommentAsync(id);
