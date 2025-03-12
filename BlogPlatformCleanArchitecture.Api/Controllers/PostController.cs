@@ -100,9 +100,16 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
         }
 
         [HttpGet("get-user-feed/{userName}")]
-        public async Task<IActionResult> GetUserFeedAsync(string userName, int pageNumber = 1, int pageSize = 5)
+        public async Task<IActionResult> GetUserFeedAsync(string userName, int pageNumber = 1, int pageSize = 10)
         {
             var feed = await _postService.GetUserFeedAsync(userName, pageNumber, pageSize);
+            return Ok(feed);
+        }
+
+        [HttpGet("get-home-feed")]
+        public async Task<IActionResult> GetHomeFeedAsync(int pageNumber = 1, int pageSize = 10)
+        {
+            var feed = await _postService.GetHomeFeedAsync(pageNumber, pageSize);
             return Ok(feed);
         }
     }

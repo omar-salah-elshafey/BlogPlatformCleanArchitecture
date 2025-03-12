@@ -126,7 +126,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
                 });
 
             var sharesQuery = _context.PostShares
-                .Where(ps => ps.SharerId == userId)
+                .Where(ps => ps.SharerId == userId && !ps.Post.IsDeleted)
                 .Select(ps => new FeedItem
                 {
                     Id = ps.Id,
@@ -152,6 +152,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
                 .Where(p => postIds.Contains(p.Id) && !p.IsDeleted)
                 .Include(p => p.Author)
                 .Include(p => p.Comments).ThenInclude(c => c.User)
+                .AsSplitQuery()
                 .ToDictionaryAsync(p => p.Id);
 
             var shares = await _context.PostShares
@@ -159,9 +160,9 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
                 .Include(ps => ps.Sharer)
                 .Include(ps => ps.Post).ThenInclude(p => p.Author)
                 .Include(ps => ps.Post).ThenInclude(p => p.Comments).ThenInclude(c => c.User)
+                .AsSplitQuery()
                 .ToDictionaryAsync(ps => ps.Id);
 
-            // Populate the Entity property in each FeedItem
             foreach (var feedItem in feedItems)
             {
                 if (feedItem.IsPost)
@@ -170,7 +171,76 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
                     feedItem.Entity = shares.ContainsKey(feedItem.Id) ? shares[feedItem.Id] : null;
             }
 
-            // Filter out items where the entity couldn't be found
+            var paginatedItems = feedItems.Where(f => f.Entity != null).ToList();
+
+            return new PaginatedResponseModel<FeedItem>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                Items = paginatedItems
+            };
+        }       
+
+        public async Task<PaginatedResponseModel<FeedItem>> GetHomeFeedAsync(int pageNumber, int pageSize)
+        {
+            var postsQuery = _context.Posts
+                .Where(p => !p.IsDeleted)
+                .Select(p => new FeedItem
+                {
+                    Id = p.Id,
+                    SortDate = p.CreatedDate,
+                    IsPost = true,
+                    EntityId = p.Id,
+                    SharerId = null
+                });
+
+            var sharesQuery = _context.PostShares
+                .Where(ps => !ps.Post.IsDeleted)
+                .Select(ps => new FeedItem
+                {
+                    Id = ps.Id,
+                    SortDate = ps.SharedDate,
+                    IsPost = false,
+                    EntityId = ps.PostId,
+                    SharerId = ps.SharerId
+                });
+
+            var combinedQuery = postsQuery.Union(sharesQuery)
+                .OrderByDescending(f => f.SortDate);
+
+            var totalItems = await combinedQuery.CountAsync();
+            var feedItems = await combinedQuery
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var postIds = feedItems.Where(f => f.IsPost).Select(f => f.EntityId).ToList();
+            var shareIds = feedItems.Where(f => !f.IsPost).Select(f => f.Id).ToList();
+
+            var posts = await _context.Posts
+                .Where(p => postIds.Contains(p.Id) && !p.IsDeleted)
+                .Include(p => p.Author)
+                .Include(p => p.Comments).ThenInclude(c => c.User)
+                .AsSplitQuery()
+                .ToDictionaryAsync(p => p.Id);
+
+            var shares = await _context.PostShares
+                .Where(ps => shareIds.Contains(ps.Id))
+                .Include(ps => ps.Sharer)
+                .Include(ps => ps.Post).ThenInclude(p => p.Author)
+                .Include(ps => ps.Post).ThenInclude(p => p.Comments).ThenInclude(c => c.User)
+                .AsSplitQuery()
+                .ToDictionaryAsync(ps => ps.Id);
+
+            foreach (var feedItem in feedItems)
+            {
+                if (feedItem.IsPost)
+                    feedItem.Entity = posts.ContainsKey(feedItem.EntityId) ? posts[feedItem.EntityId] : null;
+                else
+                    feedItem.Entity = shares.ContainsKey(feedItem.Id) ? shares[feedItem.Id] : null;
+            }
+
             var paginatedItems = feedItems.Where(f => f.Entity != null).ToList();
 
             return new PaginatedResponseModel<FeedItem>

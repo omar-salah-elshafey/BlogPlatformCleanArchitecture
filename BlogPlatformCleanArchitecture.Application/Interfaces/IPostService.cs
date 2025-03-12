@@ -14,5 +14,6 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
         Task DeletePostAsync(int id, string userId);
         Task<PostResponseModel> SharePostAsync(int postId, string userId, string userName);
         Task<PaginatedResponseModel<PostResponseModel>> GetUserFeedAsync(string userName, int pageNumber, int pageSize);
+        Task<PaginatedResponseModel<PostResponseModel>> GetHomeFeedAsync(int pageNumber, int pageSize);
     }
 }

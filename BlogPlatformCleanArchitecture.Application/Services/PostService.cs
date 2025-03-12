@@ -365,7 +365,85 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                         }
                     };
                 }
-            }).ToList();
+            }).Where(response => response != null).ToList();
+
+            return new PaginatedResponseModel<PostResponseModel>
+            {
+                PageNumber = paginatedFeed.PageNumber,
+                PageSize = paginatedFeed.PageSize,
+                TotalItems = paginatedFeed.TotalItems,
+                Items = postResponses
+            };
+        }
+        
+        public async Task<PaginatedResponseModel<PostResponseModel>> GetHomeFeedAsync(int pageNumber, int pageSize)
+        {
+            var paginatedFeed = await _postRepository.GetHomeFeedAsync(pageNumber, pageSize);
+            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
+
+            var postResponses = paginatedFeed.Items.Select(feedItem =>
+            {
+                if (feedItem.IsPost)
+                {
+                    var post = (Post)feedItem.Entity;
+                    return new PostResponseModel
+                    {
+                        Id = post.Id,
+                        AuthorName = post.Author.IsDeleted ? "Deleted Account" : post.Author.UserName,
+                        Content = post.Content,
+                        ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
+                        VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
+                        CreatedDate = post.CreatedDate.ToLocalTime(),
+                        ModifiedDate = post.ModifiedDate?.ToLocalTime(),
+                        Comments = post.Comments
+                            .Where(c => !c.IsDeleted)
+                            .Select(c => new PostCommentsModel
+                            {
+                                CommentId = c.Id,
+                                UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
+                                Content = c.Content,
+                                CreatedDate = c.CreatedDate.ToLocalTime()
+                            }).OrderByDescending(c => c.CreatedDate).ToList(),
+                        SharedPostId = null,
+                        SharerName = null,
+                        OriginalPost = null
+                    };
+                }
+                else
+                {
+                    var share = (PostShare)feedItem.Entity;
+                    var originalPost = share.Post;
+                    return new PostResponseModel
+                    {
+                        Id = share.Id,
+                        SharedPostId = share.Id,
+                        SharerName = share.Sharer.IsDeleted ? "Deleted Account" : share.Sharer.UserName,
+                        CreatedDate = share.SharedDate.ToLocalTime(),
+                        OriginalPost = new PostResponseModel
+                        {
+                            Id = originalPost.Id,
+                            AuthorName = originalPost.Author.IsDeleted ? "Deleted Account" : originalPost.Author.UserName,
+                            Content = originalPost.Content,
+                            ImageUrl = !string.IsNullOrEmpty(originalPost.ImageUrl) ? $"{baseUrl}{originalPost.ImageUrl}" : string.Empty,
+                            VideoUrl = !string.IsNullOrEmpty(originalPost.VideoUrl) ? $"{baseUrl}{originalPost.VideoUrl}" : string.Empty,
+                            CreatedDate = originalPost.CreatedDate.ToLocalTime(),
+                            ModifiedDate = originalPost.ModifiedDate?.ToLocalTime(),
+                            Comments = originalPost.Comments
+                                .Where(c => !c.IsDeleted)
+                                .Select(c => new PostCommentsModel
+                                {
+                                    CommentId = c.Id,
+                                    UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
+                                    Content = c.Content,
+                                    CreatedDate = c.CreatedDate.ToLocalTime()
+                                }).OrderByDescending(c => c.CreatedDate).ToList(),
+                            SharedPostId = null,
+                            SharerName = null,
+                            OriginalPost = null
+                        }
+                    };
+                }
+            }).Where(response => response != null).ToList();
 
             return new PaginatedResponseModel<PostResponseModel>
             {

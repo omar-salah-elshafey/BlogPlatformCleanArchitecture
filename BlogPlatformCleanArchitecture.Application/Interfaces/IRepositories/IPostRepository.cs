@@ -15,5 +15,6 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories
         Task AddPostShareAsync(PostShare postShare);
         Task<PostShare?> GetPostShareAsync(string userId, int postId);
         Task<PaginatedResponseModel<FeedItem>> GetUserFeedAsync(string userId, int pageNumber, int pageSize);
+        Task<PaginatedResponseModel<FeedItem>> GetHomeFeedAsync(int pageNumber, int pageSize);
     }
 }
