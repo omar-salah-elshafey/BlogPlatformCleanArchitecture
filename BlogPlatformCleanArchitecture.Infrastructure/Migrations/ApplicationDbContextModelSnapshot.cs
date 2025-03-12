@@ -160,7 +160,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("BlogPlatformCleanArchitecture.Domain.Entities.Post", b =>
@@ -198,7 +198,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("Posts");
+                    b.ToTable("Posts", (string)null);
                 });
 
             modelBuilder.Entity("BlogPlatformCleanArchitecture.Domain.Entities.PostLike", b =>
@@ -226,7 +226,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Migrations
                     b.HasIndex("PostId", "UserId")
                         .IsUnique();
 
-                    b.ToTable("PostLikes");
+                    b.ToTable("PostLikes", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -394,7 +394,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Migrations
 
             modelBuilder.Entity("BlogPlatformCleanArchitecture.Domain.Entities.ApplicationUser", b =>
                 {
-                    b.OwnsMany("BlogPlatformCleanArchitecture.Domain.Entities.RefreshToken", "RefreshTokens", b1 =>
+                    b.OwnsMany("BlogPlatformCleanArchitecture.Domain.Entities.ApplicationUser.RefreshTokens#BlogPlatformCleanArchitecture.Domain.Entities.RefreshToken", "RefreshTokens", b1 =>
                         {
                             b1.Property<string>("ApplicationUserId")
                                 .HasColumnType("nvarchar(450)");
@@ -420,7 +420,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Migrations
 
                             b1.HasKey("ApplicationUserId", "Id");
 
-                            b1.ToTable("RefreshToken");
+                            b1.ToTable("RefreshToken", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("ApplicationUserId");

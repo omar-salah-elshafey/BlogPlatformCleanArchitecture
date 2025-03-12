@@ -42,7 +42,17 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<AuthResponseModel> RegisterUserAsync(RegistrationDto registrationDto)
         {
             _logger.LogWarning("Registering a new user...");
-            
+            var currentUnser = _httpContextAccessor.HttpContext?.User;
+            if (currentUnser is not null)
+            {
+                var role = currentUnser.FindFirst(claim => claim.Type == ClaimTypes.Role)?.Value;
+                if(role != null && role.ToLower() == "admin" && 
+                    (registrationDto.Role.ToString().ToLower() == "admin" || registrationDto.Role.ToString().ToLower() == "superadmin"))
+                {
+                    throw new ForbiddenAccessException("An Admin Cannot add another admin or a SuperAdmin");
+                }
+            }
+
             if (await _userManager.FindByEmailAsync(registrationDto.Email) is not null)
                 throw new DuplicateValueException("This Email is already used!");
 
