@@ -12,5 +12,7 @@ namespace BlogPlatformCleanArchitecture.Application.Interfaces
         Task<PostResponseModel> CreatePostAsync(PostDto postDto, string authId, string authUserName);
         Task<PostResponseModel> UpdatePostAsync(int id, UpdatePostDto postDto, string userId, string authUserName);
         Task DeletePostAsync(int id, string userId);
+        Task<PostResponseModel> SharePostAsync(int postId, string userId, string userName);
+        Task<PaginatedResponseModel<PostResponseModel>> GetUserFeedAsync(string userName, int pageNumber, int pageSize);
     }
 }

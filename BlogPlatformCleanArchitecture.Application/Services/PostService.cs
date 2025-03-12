@@ -6,9 +6,7 @@ using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Linq;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -130,7 +128,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             {
                 AuthorId = authId,
                 Content = postDto.Content.Trim(),
-                CreatedDate = DateTime.Now.ToLocalTime()
+                CreatedDate = DateTime.UtcNow
             };
             string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
             post.ImageUrl = await HandleFileUpload(postDto.ImageFile, "image", string.Empty);
@@ -144,8 +142,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = post.Content,
                 ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
                 VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
-                CreatedDate = post.CreatedDate,
-                ModifiedDate = post.ModifiedDate,
+                CreatedDate = post.CreatedDate.ToLocalTime(),
+                ModifiedDate = post.ModifiedDate?.ToLocalTime(),
                 Comments =  new List<PostCommentsModel>()
             };
         }
@@ -205,7 +203,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 post.VideoUrl = null;
             }
 
-            post.ModifiedDate = DateTime.Now.ToLocalTime();
+            post.ModifiedDate = DateTime.UtcNow;
             string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
             await _postRepository.UpdatePostAsync(post);
             return new PostResponseModel
@@ -215,14 +213,14 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = post.Content,
                 ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
                 VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
-                CreatedDate = post.CreatedDate,
-                ModifiedDate = post.ModifiedDate,
+                CreatedDate = post.CreatedDate.ToLocalTime(),
+                ModifiedDate = post.ModifiedDate?.ToLocalTime(),
                 Comments = post.Comments?.Select(c => new PostCommentsModel
                 {
                     CommentId = c.Id,
                     UserName = c.User.UserName,
                     Content = c.Content,
-                    CreatedDate = c.CreatedDate
+                    CreatedDate = c.CreatedDate.ToLocalTime()
                 }).OrderByDescending(c => c.CreatedDate).ToList() ?? new List<PostCommentsModel>()
             };
         }
@@ -238,6 +236,144 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (!isAdmin && post.AuthorId != userId)
                 throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
             await _postRepository.DeletePostAsync(id);
+        }
+
+        public async Task<PostResponseModel> SharePostAsync(int postId, string userId, string userName)
+        {
+            var originalPost = await _postRepository.GetPostByIdAsync(postId);
+            if (originalPost == null || originalPost.IsDeleted)
+                throw new NotFoundException("Post not found or has been deleted!");
+
+            var existingShare = await _postRepository.GetPostShareAsync(userId, postId);
+            if (existingShare != null)
+                throw new DuplicateValueException("You have already shared this post!");
+
+            var postShare = new PostShare
+            {
+                SharerId = userId,
+                PostId = postId,
+                SharedDate = DateTime.UtcNow
+            };
+
+            await _postRepository.AddPostShareAsync(postShare);
+
+            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
+
+            return new PostResponseModel
+            {
+                Id = postShare.Id,
+                SharedPostId = postShare.Id,
+                SharerName = userName,
+                CreatedDate = postShare.SharedDate.ToLocalTime(),
+                OriginalPost = new PostResponseModel
+                {
+                    Id = originalPost.Id,
+                    AuthorName = originalPost.Author.IsDeleted ? "Deleted Account" : originalPost.Author.UserName,
+                    Content = originalPost.Content,
+                    ImageUrl = !string.IsNullOrEmpty(originalPost.ImageUrl) ? $"{baseUrl}{originalPost.ImageUrl}" : string.Empty,
+                    VideoUrl = !string.IsNullOrEmpty(originalPost.VideoUrl) ? $"{baseUrl}{originalPost.VideoUrl}" : string.Empty,
+                    CreatedDate = originalPost.CreatedDate.ToLocalTime(),
+                    ModifiedDate = originalPost.ModifiedDate?.ToLocalTime(),
+                    Comments = originalPost.Comments != null
+                        ? originalPost.Comments
+                            .Where(c => !c.IsDeleted)
+                            .Select(c => new PostCommentsModel
+                            {
+                                CommentId = c.Id,
+                                UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
+                                Content = c.Content,
+                                CreatedDate = c.CreatedDate.ToLocalTime()
+                            })
+                            .OrderByDescending(c => c.CreatedDate)
+                            .ToList()
+                        : new List<PostCommentsModel>(),
+                    SharedPostId = null,
+                    SharerName = null,
+                    OriginalPost = null
+                }
+            };
+        }
+
+        public async Task<PaginatedResponseModel<PostResponseModel>> GetUserFeedAsync(string userName, int pageNumber, int pageSize)
+        {
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user == null || user.IsDeleted)
+                throw new NotFoundException("User not found!");
+
+            var paginatedFeed = await _postRepository.GetUserFeedAsync(user.Id, pageNumber, pageSize);
+            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
+
+            var postResponses = paginatedFeed.Items.Select(feedItem =>
+            {
+                if (feedItem.IsPost)
+                {
+                    var post = (Post)feedItem.Entity;
+                    return new PostResponseModel
+                    {
+                        Id = post.Id,
+                        AuthorName = post.Author.IsDeleted ? "Deleted Account" : post.Author.UserName,
+                        Content = post.Content,
+                        ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
+                        VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
+                        CreatedDate = post.CreatedDate.ToLocalTime(),
+                        ModifiedDate = post.ModifiedDate?.ToLocalTime(),
+                        Comments = post.Comments
+                            .Where(c => !c.IsDeleted)
+                            .Select(c => new PostCommentsModel
+                            {
+                                CommentId = c.Id,
+                                UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
+                                Content = c.Content,
+                                CreatedDate = c.CreatedDate.ToLocalTime()
+                            }).OrderByDescending(c => c.CreatedDate).ToList(),
+                        SharedPostId = null,
+                        SharerName = null,
+                        OriginalPost = null
+                    };
+                }
+                else
+                {
+                    var share = (PostShare)feedItem.Entity;
+                    var originalPost = share.Post;
+                    return new PostResponseModel
+                    {
+                        Id = share.Id,
+                        SharedPostId = share.Id,
+                        SharerName = share.Sharer.IsDeleted ? "Deleted Account" : share.Sharer.UserName,
+                        CreatedDate = share.SharedDate.ToLocalTime(),
+                        OriginalPost = new PostResponseModel
+                        {
+                            Id = originalPost.Id,
+                            AuthorName = originalPost.Author.IsDeleted ? "Deleted Account" : originalPost.Author.UserName,
+                            Content = originalPost.Content,
+                            ImageUrl = !string.IsNullOrEmpty(originalPost.ImageUrl) ? $"{baseUrl}{originalPost.ImageUrl}" : string.Empty,
+                            VideoUrl = !string.IsNullOrEmpty(originalPost.VideoUrl) ? $"{baseUrl}{originalPost.VideoUrl}" : string.Empty,
+                            CreatedDate = originalPost.CreatedDate.ToLocalTime(),
+                            ModifiedDate = originalPost.ModifiedDate?.ToLocalTime(),
+                            Comments = originalPost.Comments
+                                .Where(c => !c.IsDeleted)
+                                .Select(c => new PostCommentsModel
+                                {
+                                    CommentId = c.Id,
+                                    UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
+                                    Content = c.Content,
+                                    CreatedDate = c.CreatedDate.ToLocalTime()
+                                }).OrderByDescending(c => c.CreatedDate).ToList(),
+                            SharedPostId = null,
+                            SharerName = null,
+                            OriginalPost = null
+                        }
+                    };
+                }
+            }).ToList();
+
+            return new PaginatedResponseModel<PostResponseModel>
+            {
+                PageNumber = paginatedFeed.PageNumber,
+                PageSize = paginatedFeed.PageSize,
+                TotalItems = paginatedFeed.TotalItems,
+                Items = postResponses
+            };
         }
 
         private void ValidateFileType(IFormFile file, string expectedType)

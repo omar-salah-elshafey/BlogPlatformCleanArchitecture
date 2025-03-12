@@ -13,5 +13,6 @@
         public string? ImageUrl { get; set; }
         public string? VideoUrl { get; set; }
         public ICollection<PostLike> Likes { get; set; }
+        public ICollection<PostShare> Shares { get; set; } = new List<PostShare>();
     }
 }

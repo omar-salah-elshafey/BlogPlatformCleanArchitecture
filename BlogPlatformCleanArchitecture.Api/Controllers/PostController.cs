@@ -86,5 +86,24 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             await _postService.DeletePostAsync(id, userId);
             return Ok(new {message = "Post Deleted Successfully!"});
         }
+
+        [HttpPost("share-post/{postId}")]
+        [Authorize]
+        public async Task<IActionResult> SharePostAsync(int postId)
+        {
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var userId = userClaims!.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userName = userClaims!.Identity?.Name;
+
+            var sharedPost = await _postService.SharePostAsync(postId, userId, userName);
+            return Ok(sharedPost);
+        }
+
+        [HttpGet("get-user-feed/{userName}")]
+        public async Task<IActionResult> GetUserFeedAsync(string userName, int pageNumber = 1, int pageSize = 5)
+        {
+            var feed = await _postService.GetUserFeedAsync(userName, pageNumber, pageSize);
+            return Ok(feed);
+        }
     }
 }

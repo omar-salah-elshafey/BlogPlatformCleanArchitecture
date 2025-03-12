@@ -12,6 +12,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Data
         public DbSet<Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<PostLike> PostLikes { get; set; }
+        public DbSet<PostShare> PostShares { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

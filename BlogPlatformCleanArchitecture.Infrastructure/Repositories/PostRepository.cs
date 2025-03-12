@@ -3,9 +3,6 @@ using BlogPlatformCleanArchitecture.Application.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
 {
@@ -103,5 +100,86 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
             }
         }
 
+        public async Task AddPostShareAsync(PostShare postShare)
+        {
+            await _context.PostShares.AddAsync(postShare);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<PostShare?> GetPostShareAsync(string userId, int postId)
+        {
+            return await _context.PostShares
+                .FirstOrDefaultAsync(ps => ps.SharerId == userId && ps.PostId == postId);
+        }
+
+        public async Task<PaginatedResponseModel<FeedItem>> GetUserFeedAsync(string userId, int pageNumber, int pageSize)
+        {
+            var postsQuery = _context.Posts
+                .Where(p => p.AuthorId == userId && !p.IsDeleted)
+                .Select(p => new FeedItem
+                {
+                    Id = p.Id,
+                    SortDate = p.CreatedDate,
+                    IsPost = true,
+                    EntityId = p.Id,
+                    SharerId = null
+                });
+
+            var sharesQuery = _context.PostShares
+                .Where(ps => ps.SharerId == userId)
+                .Select(ps => new FeedItem
+                {
+                    Id = ps.Id,
+                    SortDate = ps.SharedDate,
+                    IsPost = false,
+                    EntityId = ps.PostId,
+                    SharerId = ps.SharerId
+                });
+
+            var combinedQuery = postsQuery.Union(sharesQuery)
+                .OrderByDescending(f => f.SortDate);
+
+            var totalItems = await combinedQuery.CountAsync();
+            var feedItems = await combinedQuery
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var postIds = feedItems.Where(f => f.IsPost).Select(f => f.EntityId).ToList();
+            var shareIds = feedItems.Where(f => !f.IsPost).Select(f => f.Id).ToList();
+
+            var posts = await _context.Posts
+                .Where(p => postIds.Contains(p.Id) && !p.IsDeleted)
+                .Include(p => p.Author)
+                .Include(p => p.Comments).ThenInclude(c => c.User)
+                .ToDictionaryAsync(p => p.Id);
+
+            var shares = await _context.PostShares
+                .Where(ps => shareIds.Contains(ps.Id))
+                .Include(ps => ps.Sharer)
+                .Include(ps => ps.Post).ThenInclude(p => p.Author)
+                .Include(ps => ps.Post).ThenInclude(p => p.Comments).ThenInclude(c => c.User)
+                .ToDictionaryAsync(ps => ps.Id);
+
+            // Populate the Entity property in each FeedItem
+            foreach (var feedItem in feedItems)
+            {
+                if (feedItem.IsPost)
+                    feedItem.Entity = posts.ContainsKey(feedItem.EntityId) ? posts[feedItem.EntityId] : null;
+                else
+                    feedItem.Entity = shares.ContainsKey(feedItem.Id) ? shares[feedItem.Id] : null;
+            }
+
+            // Filter out items where the entity couldn't be found
+            var paginatedItems = feedItems.Where(f => f.Entity != null).ToList();
+
+            return new PaginatedResponseModel<FeedItem>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                Items = paginatedItems
+            };
+        }
     }
 }
