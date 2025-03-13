@@ -251,5 +251,16 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
                 Items = paginatedItems
             };
         }
+
+        public async Task<PostShare?> GetSharedPostByIdAsync(int id)
+        {
+            return await _context.PostShares.Where(ps => ps.Id == id).Include(ps => ps.Sharer).FirstOrDefaultAsync();
+        }
+
+        public async Task DeleteSharedPostAsync(PostShare postShare)
+        {
+            _context.PostShares.Remove(postShare);
+            await _context.SaveChangesAsync();
+        }
     }
 }

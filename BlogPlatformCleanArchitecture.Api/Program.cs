@@ -85,13 +85,13 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 });
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.SetIsOriginAllowed(origin => true)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
-    });
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
 });
 builder.Configuration.AddUserSecrets<Program>();
 

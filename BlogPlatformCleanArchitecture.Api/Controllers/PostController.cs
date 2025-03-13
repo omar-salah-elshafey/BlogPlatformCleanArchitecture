@@ -112,5 +112,15 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             var feed = await _postService.GetHomeFeedAsync(pageNumber, pageSize);
             return Ok(feed);
         }
+
+        [HttpDelete("delete-shared-post/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteSharedPostAsync(int id)
+        {
+            var userClaims = _httpContextAccessor.HttpContext?.User;
+            var userId = userClaims!.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _postService.DeleteSharedPostAsync(id, userId);
+            return Ok(new { message = "Post Deleted Successfully!" });
+        }
     }
 }

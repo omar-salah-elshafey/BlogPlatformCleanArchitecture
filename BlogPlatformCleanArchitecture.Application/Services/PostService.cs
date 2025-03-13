@@ -35,15 +35,14 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         {
             var paginatedPosts = await _postRepository.GetAllPostsAsync(pageNumber, pageSize);
 
-            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
 
             var postResponses = paginatedPosts.Items.Select(p => new PostResponseModel
             {
                 Id = p.Id,
                 AuthorName = p.Author.IsDeleted ? "Deleted Account" : p.Author.UserName,
                 Content = p.Content,
-                ImageUrl = !string.IsNullOrEmpty(p.ImageUrl) ? $"{baseUrl}{p.ImageUrl}" : string.Empty,
-                VideoUrl = !string.IsNullOrEmpty(p.VideoUrl) ? $"{baseUrl}{p.VideoUrl}" : string.Empty,
+                ImageUrl = !string.IsNullOrEmpty(p.ImageUrl) ? $"{p.ImageUrl}" : string.Empty,
+                VideoUrl = !string.IsNullOrEmpty(p.VideoUrl) ? $"{p.VideoUrl}" : string.Empty,
                 CreatedDate = p.CreatedDate,
                 ModifiedDate = p.ModifiedDate,
                 Comments = p.Comments
@@ -72,15 +71,14 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             if (post == null)
                 throw new NotFoundException("Post Not Found!");
 
-            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
 
             return new PostResponseModel
             {
                 Id = post.Id,
                 AuthorName = post.Author.IsDeleted ? "Deleted Account" : post.Author.UserName,
                 Content = post.Content,
-                ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
-                VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
+                ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{post.ImageUrl}" : string.Empty,
+                VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{post.VideoUrl}" : string.Empty,
                 CreatedDate = post.CreatedDate,
                 ModifiedDate = post.ModifiedDate
             };
@@ -91,14 +89,14 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             var user = await _userManager.FindByNameAsync(userName);
             if (user == null || user.IsDeleted) throw new NotFoundException("User Not Found!");
             var paginatedPosts = await _postRepository.GetPostsByUserAsync(userName, pageNumber, pageSize);
-            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
+
             var postResponses = paginatedPosts.Items.Select(p => new PostResponseModel
             {
                 Id = p.Id,
                 AuthorName = p.Author.UserName,
                 Content = p.Content,
-                ImageUrl = !string.IsNullOrEmpty(p.ImageUrl) ? $"{baseUrl}{p.ImageUrl}" : string.Empty,
-                VideoUrl = !string.IsNullOrEmpty(p.VideoUrl) ? $"{baseUrl}{p.VideoUrl}" : string.Empty,
+                ImageUrl = !string.IsNullOrEmpty(p.ImageUrl) ? $"{p.ImageUrl}" : string.Empty,
+                VideoUrl = !string.IsNullOrEmpty(p.VideoUrl) ? $"{p.VideoUrl}" : string.Empty,
                 CreatedDate = p.CreatedDate,
                 ModifiedDate = p.ModifiedDate,
                 Comments = p.Comments
@@ -130,7 +128,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = postDto.Content.Trim(),
                 CreatedDate = DateTime.UtcNow
             };
-            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
             post.ImageUrl = await HandleFileUpload(postDto.ImageFile, "image", string.Empty);
             post.VideoUrl = await HandleFileUpload(postDto.VideoFile, "video", string.Empty);
 
@@ -140,8 +137,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Id = post.Id,
                 AuthorName = authUserName,
                 Content = post.Content,
-                ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
-                VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
+                ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{post.ImageUrl}" : string.Empty,
+                VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{post.VideoUrl}" : string.Empty,
                 CreatedDate = post.CreatedDate.ToLocalTime(),
                 ModifiedDate = post.ModifiedDate?.ToLocalTime(),
                 Comments =  new List<PostCommentsModel>()
@@ -204,15 +201,15 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             }
 
             post.ModifiedDate = DateTime.UtcNow;
-            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
+
             await _postRepository.UpdatePostAsync(post);
             return new PostResponseModel
             {
                 Id = post.Id,
                 AuthorName = authUserName,
                 Content = post.Content,
-                ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
-                VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
+                ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{post.ImageUrl}" : string.Empty,
+                VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{post.VideoUrl}" : string.Empty,
                 CreatedDate = post.CreatedDate.ToLocalTime(),
                 ModifiedDate = post.ModifiedDate?.ToLocalTime(),
                 Comments = post.Comments?.Select(c => new PostCommentsModel
@@ -257,8 +254,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
 
             await _postRepository.AddPostShareAsync(postShare);
 
-            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
-
             return new PostResponseModel
             {
                 Id = postShare.Id,
@@ -270,8 +265,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                     Id = originalPost.Id,
                     AuthorName = originalPost.Author.IsDeleted ? "Deleted Account" : originalPost.Author.UserName,
                     Content = originalPost.Content,
-                    ImageUrl = !string.IsNullOrEmpty(originalPost.ImageUrl) ? $"{baseUrl}{originalPost.ImageUrl}" : string.Empty,
-                    VideoUrl = !string.IsNullOrEmpty(originalPost.VideoUrl) ? $"{baseUrl}{originalPost.VideoUrl}" : string.Empty,
+                    ImageUrl = !string.IsNullOrEmpty(originalPost.ImageUrl) ? $"{originalPost.ImageUrl}" : string.Empty,
+                    VideoUrl = !string.IsNullOrEmpty(originalPost.VideoUrl) ? $"{originalPost.VideoUrl}" : string.Empty,
                     CreatedDate = originalPost.CreatedDate.ToLocalTime(),
                     ModifiedDate = originalPost.ModifiedDate?.ToLocalTime(),
                     Comments = originalPost.Comments != null
@@ -301,7 +296,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 throw new NotFoundException("User not found!");
 
             var paginatedFeed = await _postRepository.GetUserFeedAsync(user.Id, pageNumber, pageSize);
-            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
 
             var postResponses = paginatedFeed.Items.Select(feedItem =>
             {
@@ -313,8 +307,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                         Id = post.Id,
                         AuthorName = post.Author.IsDeleted ? "Deleted Account" : post.Author.UserName,
                         Content = post.Content,
-                        ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
-                        VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
+                        ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{post.ImageUrl}" : string.Empty,
+                        VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{post.VideoUrl}" : string.Empty,
                         CreatedDate = post.CreatedDate.ToLocalTime(),
                         ModifiedDate = post.ModifiedDate?.ToLocalTime(),
                         Comments = post.Comments
@@ -346,8 +340,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                             Id = originalPost.Id,
                             AuthorName = originalPost.Author.IsDeleted ? "Deleted Account" : originalPost.Author.UserName,
                             Content = originalPost.Content,
-                            ImageUrl = !string.IsNullOrEmpty(originalPost.ImageUrl) ? $"{baseUrl}{originalPost.ImageUrl}" : string.Empty,
-                            VideoUrl = !string.IsNullOrEmpty(originalPost.VideoUrl) ? $"{baseUrl}{originalPost.VideoUrl}" : string.Empty,
+                            ImageUrl = !string.IsNullOrEmpty(originalPost.ImageUrl) ? $"{originalPost.ImageUrl}" : string.Empty,
+                            VideoUrl = !string.IsNullOrEmpty(originalPost.VideoUrl) ? $"{originalPost.VideoUrl}" : string.Empty,
                             CreatedDate = originalPost.CreatedDate.ToLocalTime(),
                             ModifiedDate = originalPost.ModifiedDate?.ToLocalTime(),
                             Comments = originalPost.Comments
@@ -379,7 +373,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         public async Task<PaginatedResponseModel<PostResponseModel>> GetHomeFeedAsync(int pageNumber, int pageSize)
         {
             var paginatedFeed = await _postRepository.GetHomeFeedAsync(pageNumber, pageSize);
-            string baseUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
 
             var postResponses = paginatedFeed.Items.Select(feedItem =>
             {
@@ -391,8 +384,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                         Id = post.Id,
                         AuthorName = post.Author.IsDeleted ? "Deleted Account" : post.Author.UserName,
                         Content = post.Content,
-                        ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{baseUrl}{post.ImageUrl}" : string.Empty,
-                        VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{baseUrl}{post.VideoUrl}" : string.Empty,
+                        ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{post.ImageUrl}" : string.Empty,
+                        VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{post.VideoUrl}" : string.Empty,
                         CreatedDate = post.CreatedDate.ToLocalTime(),
                         ModifiedDate = post.ModifiedDate?.ToLocalTime(),
                         Comments = post.Comments
@@ -424,8 +417,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                             Id = originalPost.Id,
                             AuthorName = originalPost.Author.IsDeleted ? "Deleted Account" : originalPost.Author.UserName,
                             Content = originalPost.Content,
-                            ImageUrl = !string.IsNullOrEmpty(originalPost.ImageUrl) ? $"{baseUrl}{originalPost.ImageUrl}" : string.Empty,
-                            VideoUrl = !string.IsNullOrEmpty(originalPost.VideoUrl) ? $"{baseUrl}{originalPost.VideoUrl}" : string.Empty,
+                            ImageUrl = !string.IsNullOrEmpty(originalPost.ImageUrl) ? $"{originalPost.ImageUrl}" : string.Empty,
+                            VideoUrl = !string.IsNullOrEmpty(originalPost.VideoUrl) ? $"{originalPost.VideoUrl}" : string.Empty,
                             CreatedDate = originalPost.CreatedDate.ToLocalTime(),
                             ModifiedDate = originalPost.ModifiedDate?.ToLocalTime(),
                             Comments = originalPost.Comments
@@ -452,6 +445,19 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 TotalItems = paginatedFeed.TotalItems,
                 Items = postResponses
             };
+        }
+
+        public async Task DeleteSharedPostAsync(int id, string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin")
+                || await _userManager.IsInRoleAsync(user, "SuperAdmin");
+            var sharedPost = await _postRepository.GetSharedPostByIdAsync(id);
+            if (sharedPost == null)
+                throw new NotFoundException("Post Not Found!");
+            if (!isAdmin && sharedPost.SharerId != userId)
+                throw new ForbiddenAccessException("You aren't Authenticated to do this action!");
+            await _postRepository.DeleteSharedPostAsync(sharedPost);
         }
 
         private void ValidateFileType(IFormFile file, string expectedType)
