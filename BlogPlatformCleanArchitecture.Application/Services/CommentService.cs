@@ -15,16 +15,19 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         private readonly IPostRepository _postRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<CommentService> _logger;
+        private readonly INotificationService _notificationService;
 
         public CommentService(ICommentRepository commentRepository,
             UserManager<ApplicationUser> userManager,
             IPostRepository postRepository,
-            ILogger<CommentService> logger)
+            ILogger<CommentService> logger,
+            INotificationService notificationService)
         {
             _commentRepository = commentRepository;
             _userManager = userManager;
             _postRepository = postRepository;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         public async Task<int> GetCommentsCountAsync()
@@ -99,9 +102,6 @@ namespace BlogPlatformCleanArchitecture.Application.Services
 
         public async Task<CommentResponseModel> CreateCommentAsync(CommentDto commentDto, string userId, string userName)
         {
-            _logger.LogWarning(userId);
-            _logger.LogWarning(userName);
-            _logger.LogWarning($"{commentDto.PostId}");
             var post = await _postRepository.GetPostByIdAsync(commentDto.PostId);
             if (post == null)
                 throw new NotFoundException($"No posts were found with this ID: {commentDto.PostId}");
@@ -115,6 +115,12 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 CreatedDate = DateTime.Now.ToLocalTime()
             };
             await _commentRepository.AddCommentAsync(comment);
+
+            if (post.AuthorId != userId)
+            {
+                await _notificationService.NotifyPostCommentedAsync(post, comment);
+            }
+
             return new CommentResponseModel
             {
                 Id = comment.Id,

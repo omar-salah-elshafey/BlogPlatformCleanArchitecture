@@ -3,6 +3,7 @@ using BlogPlatformCleanArchitecture.Application.ExceptionHandling;
 using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories;
 using BlogPlatformCleanArchitecture.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace BlogPlatformCleanArchitecture.Application.Services
 {
@@ -11,11 +12,16 @@ namespace BlogPlatformCleanArchitecture.Application.Services
 
         private readonly IPostLikeRepository _postLikeRepository;
         private readonly IPostRepository _postRepository;
+        private readonly INotificationService _notificationService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public PostLikeService(IPostLikeRepository postLikeRepository, IPostRepository postRepository)
+        public PostLikeService(IPostLikeRepository postLikeRepository, IPostRepository postRepository,
+            INotificationService notificationService, UserManager<ApplicationUser> userManager)
         {
             _postLikeRepository = postLikeRepository;
             _postRepository = postRepository;
+            _notificationService = notificationService;
+            _userManager = userManager;
         }
 
         public async Task<List<PostLikeDto>> ToggleLikeAsync(int postId, string userId)
@@ -38,6 +44,14 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                     LikedDate = DateTime.UtcNow
                 };
                 await _postLikeRepository.AddPostLikeAsync(like);
+
+                var liker = await _userManager.FindByIdAsync(userId);
+                if (liker == null) throw new NotFoundException("User not found");
+                if (post.AuthorId != liker.Id)
+                {
+                    await _notificationService.NotifyPostLikedAsync(post, liker);
+                }
+
                 return await GetPostLikesAsync(postId);
             }
         }

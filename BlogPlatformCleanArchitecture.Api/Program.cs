@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Application.Configurations;
 using BlogPlatformCleanArchitecture.Api.Middleware;
+using BlogPlatformCleanArchitecture.Infrastructure.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,16 +84,18 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
     options.TokenLifespan = TimeSpan.FromMinutes(5); // Set token expiration to .... minutes
 });
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        policy =>
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        });
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200", "https://aqrab.online", "https://boxer-tender-conversely.ngrok-free.app")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
 });
+
 builder.Configuration.AddUserSecrets<Program>();
 
 var app = builder.Build();
@@ -106,10 +109,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
-app.UseCors("AllowAll");
+app.UseCors("AllowSpecificOrigins");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHub<NotificationHub>("/notificationHub");
 app.UseStaticFiles();
 app.MapControllers();
 

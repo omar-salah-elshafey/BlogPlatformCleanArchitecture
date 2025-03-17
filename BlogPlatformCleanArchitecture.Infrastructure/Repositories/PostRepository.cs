@@ -45,7 +45,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Repositories
         public async Task<Post> GetPostByIdAsync(int id)
         {
             return await _context.Posts
-                .Where(p => !p.IsDeleted && p.Id == id )
+                .Where(p => !p.IsDeleted && p.Id == id ).Include(p => p.Likes)
                 .Include(p => p.Author)
                 .FirstOrDefaultAsync();
         }

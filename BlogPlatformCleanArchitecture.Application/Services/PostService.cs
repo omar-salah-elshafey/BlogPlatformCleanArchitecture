@@ -15,15 +15,15 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         private readonly IPostRepository _postRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<PostService> _logger;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly INotificationService _notificationService;
 
-        public PostService(IPostRepository postRepository, UserManager<ApplicationUser> userManager, 
-            ILogger<PostService> logger, IHttpContextAccessor httpContextAccessor)
+        public PostService(IPostRepository postRepository, UserManager<ApplicationUser> userManager,
+            ILogger<PostService> logger, INotificationService notificationService)
         {
             _postRepository = postRepository;
             _userManager = userManager;
             _logger = logger;
-            _httpContextAccessor = httpContextAccessor;
+            _notificationService = notificationService;
         }
 
         public async Task<int> GetPostsCountAsync()
@@ -132,6 +132,9 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             post.VideoUrl = await HandleFileUpload(postDto.VideoFile, "video", string.Empty);
 
             await _postRepository.AddPostAsync(post);
+
+            await _notificationService.NotifyNewPostAsync(post);
+
             return new PostResponseModel
             {
                 Id = post.Id,

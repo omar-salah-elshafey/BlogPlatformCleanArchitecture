@@ -2,6 +2,7 @@
 using BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories;
 using BlogPlatformCleanArchitecture.Application.Services;
 using BlogPlatformCleanArchitecture.Infrastructure.Data;
+using BlogPlatformCleanArchitecture.Infrastructure.Hubs;
 using BlogPlatformCleanArchitecture.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,12 +19,14 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.DependencyInjection
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnections")));
 
             services.AddHttpContextAccessor();
+            services.AddSignalR();
 
             // Register repositories if you have any, e.g., IUserRepository
             // services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IPostLikeRepository, PostLikeRepository>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
 
             // Register application services, e.g., AuthService
             services.AddScoped<IAuthService, AuthService>();
@@ -35,6 +38,8 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.DependencyInjection
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<ICookieService, CookieService>();
             services.AddScoped<IPostLikeService, PostLikeService>();
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<INotificationSender, NotificationSender>();
             return services;
         }
     }
