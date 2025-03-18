@@ -43,8 +43,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = p.Content,
                 ImageUrl = !string.IsNullOrEmpty(p.ImageUrl) ? $"{p.ImageUrl}" : string.Empty,
                 VideoUrl = !string.IsNullOrEmpty(p.VideoUrl) ? $"{p.VideoUrl}" : string.Empty,
-                CreatedDate = p.CreatedDate,
-                ModifiedDate = p.ModifiedDate,
+                CreatedDate = p.CreatedDate.ToLocalTime(),
+                ModifiedDate = p.ModifiedDate?.ToLocalTime(),
                 Comments = p.Comments
                     .Where(c => !c.IsDeleted)
                     .Select(c => new PostCommentsModel
@@ -52,7 +52,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                         CommentId = c.Id,
                         UserName = c.User.IsDeleted ? "Deleted Account" : c.User.UserName,
                         Content = c.Content,
-                        CreatedDate = c.CreatedDate
+                        CreatedDate = c.CreatedDate.ToLocalTime()
                     }).OrderByDescending(c => c.CreatedDate).ToList()
             });
 
@@ -79,8 +79,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = post.Content,
                 ImageUrl = !string.IsNullOrEmpty(post.ImageUrl) ? $"{post.ImageUrl}" : string.Empty,
                 VideoUrl = !string.IsNullOrEmpty(post.VideoUrl) ? $"{post.VideoUrl}" : string.Empty,
-                CreatedDate = post.CreatedDate,
-                ModifiedDate = post.ModifiedDate
+                CreatedDate = post.CreatedDate.ToLocalTime(),
+                ModifiedDate = post.ModifiedDate?.ToLocalTime()
             };
         }
 
@@ -97,8 +97,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 Content = p.Content,
                 ImageUrl = !string.IsNullOrEmpty(p.ImageUrl) ? $"{p.ImageUrl}" : string.Empty,
                 VideoUrl = !string.IsNullOrEmpty(p.VideoUrl) ? $"{p.VideoUrl}" : string.Empty,
-                CreatedDate = p.CreatedDate,
-                ModifiedDate = p.ModifiedDate,
+                CreatedDate = p.CreatedDate.ToLocalTime(),
+                ModifiedDate = p.ModifiedDate?.ToLocalTime(),
                 Comments = p.Comments
                 .Where(c => !c.IsDeleted)
                 .Select(c => new PostCommentsModel
@@ -106,7 +106,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                     CommentId = c.Id,
                     UserName = c.User.UserName,
                     Content = c.Content,
-                    CreatedDate = c.CreatedDate
+                    CreatedDate = c.CreatedDate.ToLocalTime()
                 }).OrderByDescending(c => c.CreatedDate).ToList()
             });
             return new PaginatedResponseModel<PostResponseModel>

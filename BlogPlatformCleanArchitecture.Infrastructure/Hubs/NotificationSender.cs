@@ -19,7 +19,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Hubs
 
         public async Task SendToUserAsync(string userId, string methodName, object arg)
         {
-            await _hubContext.Clients.User(userId).SendAsync(methodName, arg);
+            await _hubContext.Clients.Group(userId).SendAsync(methodName, arg);
         }
     }
 }

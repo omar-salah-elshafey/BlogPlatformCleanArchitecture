@@ -5,6 +5,7 @@
          int Id,
          string Message,
          string Type,
-         int? RelatedPostId
+         int? RelatedPostId,
+         DateTime CreatedAt
     );
 }

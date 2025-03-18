@@ -4,6 +4,7 @@ using BlogPlatformCleanArchitecture.Application.Services;
 using BlogPlatformCleanArchitecture.Infrastructure.Data;
 using BlogPlatformCleanArchitecture.Infrastructure.Hubs;
 using BlogPlatformCleanArchitecture.Infrastructure.Repositories;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +41,8 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.DependencyInjection
             services.AddScoped<IPostLikeService, PostLikeService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<INotificationSender, NotificationSender>();
+
+            services.AddSingleton<IUserIdProvider, SubBasedUserIdProvider>();
             return services;
         }
     }

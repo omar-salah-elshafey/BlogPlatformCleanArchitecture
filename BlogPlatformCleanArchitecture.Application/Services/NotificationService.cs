@@ -49,8 +49,9 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 {
                     id = notification.Id,
                     message,
-                    postId = post.Id,
-                    type = "NewPost"
+                    relatedPostId = post.Id,
+                    type = "NewPost",
+                    createdAt = notification.CreatedAt
                 });
             }
         }
@@ -81,8 +82,9 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             {
                 id = notification.Id,
                 message,
-                postId = post.Id,
-                type = "PostLiked"
+                relatedPostId = post.Id,
+                type = "PostLiked",
+                createdAt = notification.CreatedAt
             });
         }
 
@@ -113,8 +115,9 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             {
                 id = notification.Id,
                 message,
-                postId = post.Id,
-                type = "PostCommented"
+                relatedPostId = post.Id,
+                type = "PostCommented",
+                createdAt = notification.CreatedAt
             });
         }
 
@@ -125,7 +128,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 n.Id,
                 n.Message,
                 n.Type,
-                n.RelatedPostId
+                n.RelatedPostId,
+                n.CreatedAt
             )).ToList();
         }
 
