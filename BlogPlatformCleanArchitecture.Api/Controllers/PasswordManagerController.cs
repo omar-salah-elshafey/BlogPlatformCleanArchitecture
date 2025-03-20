@@ -44,7 +44,7 @@ namespace BlogPlatformCleanArchitecture.Api.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
             await _passwordManagementService.ResetPasswordRequestAsync(email);
-            return Ok(new { Message = "A Password Reset Code has been sent to your Email!" });
+            return Ok(new { Message = "An OTP has been sent to your Email!" });
         }
 
         [HttpPost("verify-password-reset-token")]

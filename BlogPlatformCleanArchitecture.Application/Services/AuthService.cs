@@ -24,10 +24,11 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         private readonly ILogger<AuthService> _logger;
         private readonly ICookieService _cookieService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IOtpService _otpService;
         public AuthService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
             IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions, IEmailService emailService,
             ITokenService tokenService, ILogger<AuthService> logger, ICookieService cookieService,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor, IOtpService otpService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -37,6 +38,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             _logger = logger;
             _cookieService = cookieService;
             _httpContextAccessor = httpContextAccessor;
+            _otpService = otpService;
         }
 
         public async Task<AuthResponseModel> RegisterUserAsync(RegistrationDto registrationDto)
@@ -65,7 +67,7 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 LastName = registrationDto.LastName,
                 UserName = registrationDto.UserName,
                 Email = registrationDto.Email,
-                EmailConfirmed = true
+                //EmailConfirmed = true
             };
             var result = await _userManager.CreateAsync(user, registrationDto.Password);
             if (!result.Succeeded)
@@ -75,6 +77,13 @@ namespace BlogPlatformCleanArchitecture.Application.Services
             }
             
             await _userManager.AddToRoleAsync(user, registrationDto.Role.ToString());
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var otp = await _otpService.GenerateAndStoreOtpAsync(user.Email, token);
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Email Verification Code",
+                $"Hello {user.UserName}, Use this OTP to verify your email: {otp}\nThis code is valid for 10 minutes."
+            );
 
             _logger.LogInformation($"User with Email {user.Email} has been created Successfully!");
             return new AuthResponseModel

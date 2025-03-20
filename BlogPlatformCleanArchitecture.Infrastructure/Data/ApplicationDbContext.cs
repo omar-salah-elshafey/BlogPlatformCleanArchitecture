@@ -14,6 +14,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Data
         public DbSet<PostLike> PostLikes { get; set; }
         public DbSet<PostShare> PostShares { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Otp> Otps { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -39,6 +40,16 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.Data
                 .HasOne(pl => pl.User)
                 .WithMany()
                 .HasForeignKey(pl => pl.UserId);
+            builder.Entity<Otp>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.OtpCode).HasMaxLength(6);
+                entity.Property(e => e.Email).IsRequired();
+                entity.Property(e => e.Token).IsRequired();
+                entity.Property(e => e.ExpirationDateTime).IsRequired();
+
+                entity.HasIndex(e => new { e.Email, e.OtpCode });
+            });
         }
 
         private static void seedRoles(ModelBuilder modelBuilder)

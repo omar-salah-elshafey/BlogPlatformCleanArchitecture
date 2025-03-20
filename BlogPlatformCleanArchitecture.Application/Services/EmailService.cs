@@ -18,14 +18,16 @@ namespace BlogPlatformCleanArchitecture.Application.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IOptions<DataProtectionTokenProviderOptions> _tokenProviderOptions;
         private readonly ILogger<EmailService> _logger;
+        private readonly IOtpService _otpService;
 
         public EmailService(IConfiguration config, UserManager<ApplicationUser> userManager,
-            IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions, ILogger<EmailService> logger)
+            IOptions<DataProtectionTokenProviderOptions> tokenProviderOptions, ILogger<EmailService> logger, IOtpService otpService)
         {
             _config = config;
             _userManager = userManager;
             _tokenProviderOptions = tokenProviderOptions;
             _logger = logger;
+            _otpService = otpService;
         }
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
@@ -51,8 +53,8 @@ namespace BlogPlatformCleanArchitecture.Application.Services
 
             if (string.IsNullOrEmpty(confirmEmailDto.Email) || string.IsNullOrEmpty(confirmEmailDto.Token))
             {
-                _logger.LogError("Email and token are required.");
-                throw new InvalidEmailOrTokenException("Email and token are required."); 
+                _logger.LogError("Email and OTP are required.");
+                throw new InvalidEmailOrTokenException("Email and OTP are required."); 
             }
 
             var user = await _userManager.FindByEmailAsync(confirmEmailDto.Email);
@@ -68,16 +70,27 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 _logger.LogWarning("Your email is already confirmed.");
                 throw new EmailAlreadyConfirmedException("Your email has been confirmed successfully.");
             }
-                
 
-            var result = await _userManager.ConfirmEmailAsync(user, confirmEmailDto.Token);
-            if (!result.Succeeded)
+            var (realToken, isExpired) = await _otpService.GetTokenFromOtpAsync(confirmEmailDto.Email, confirmEmailDto.Token);
+            if (realToken == null)
             {
-                _logger.LogError("Token is not valid.");
-                throw new InvalidTokenException("Token is not valid.");
+                if (isExpired)
+                {
+                    _logger.LogWarning("OTP has expired for user {Email}", user.Email);
+                    throw new InvalidTokenException("The OTP has expired. Please request a new one.");
+                }
+                _logger.LogError("Invalid OTP for user {Email}", user.Email);
+                throw new InvalidTokenException("The OTP is not valid.");
             }
 
-            _logger.LogInformation("Your email has been confirmed.");
+            var result = await _userManager.ConfirmEmailAsync(user, realToken);
+            if (!result.Succeeded)
+            {
+                _logger.LogError("Token verification failed for user {Email}", user.Email);
+                throw new InvalidTokenException("Token verification failed.");
+            }
+
+            _logger.LogInformation("Email confirmed successfully for user {Email}", user.Email);
         }
 
         public async Task ResendEmailConfirmationTokenAsync(string Email)
@@ -102,15 +115,16 @@ namespace BlogPlatformCleanArchitecture.Application.Services
                 _logger.LogWarning("Your email is already confirmed.");
                 throw new EmailAlreadyConfirmedException("Email is already confirmed.");
             }
-                
 
-            // Generate new token
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var expirationTime = _tokenProviderOptions.Value.TokenLifespan.TotalMinutes;
-            // Send the new token via email
-            await SendEmailAsync(user.Email, "Email Verification Code",
-                $"Hello {user.UserName}, Use this new token to verify your Email: {token}\n This code is Valid only for {expirationTime} Minutes.");
+            var otp = await _otpService.GenerateAndStoreOtpAsync(user.Email, token);
+            await SendEmailAsync(
+                user.Email,
+                "Email Verification Code",
+                $"Hello {user.UserName}, Use this OTP to verify your email: '{otp}'\nThis code is valid for 10 minutes."
+            );
 
+            _logger.LogInformation("New OTP sent to {Email}", user.Email);
         }
     }
 }

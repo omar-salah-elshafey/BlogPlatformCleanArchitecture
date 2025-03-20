@@ -9,6 +9,7 @@ using BlogPlatformCleanArchitecture.Domain.Entities;
 using BlogPlatformCleanArchitecture.Application.Configurations;
 using BlogPlatformCleanArchitecture.Api.Middleware;
 using BlogPlatformCleanArchitecture.Infrastructure.Hubs;
+using AspNetCoreRateLimit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,6 +103,9 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
     options.TokenLifespan = TimeSpan.FromMinutes(5); // Set token expiration to .... minutes
 });
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSignalR();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", policy =>
@@ -128,6 +132,7 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseCors("AllowSpecificOrigins");
 app.UseHttpsRedirection();
+app.UseIpRateLimiting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHub<NotificationHub>("/notificationHub");

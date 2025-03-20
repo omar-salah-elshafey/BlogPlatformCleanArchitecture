@@ -1,4 +1,5 @@
-﻿using BlogPlatformCleanArchitecture.Application.Interfaces;
+﻿using AspNetCoreRateLimit;
+using BlogPlatformCleanArchitecture.Application.Interfaces;
 using BlogPlatformCleanArchitecture.Application.Interfaces.IRepositories;
 using BlogPlatformCleanArchitecture.Application.Services;
 using BlogPlatformCleanArchitecture.Infrastructure.Data;
@@ -19,8 +20,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.DependencyInjection
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnections")));
 
-            services.AddHttpContextAccessor();
-            services.AddSignalR();
+            services.AddMemoryCache();
 
             // Register repositories if you have any, e.g., IUserRepository
             // services.AddScoped<IUserRepository, UserRepository>();
@@ -28,6 +28,7 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.DependencyInjection
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IPostLikeRepository, PostLikeRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IOtpRepository, OtpRepository>();
 
             // Register application services, e.g., AuthService
             services.AddScoped<IAuthService, AuthService>();
@@ -41,8 +42,16 @@ namespace BlogPlatformCleanArchitecture.Infrastructure.DependencyInjection
             services.AddScoped<IPostLikeService, PostLikeService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<INotificationSender, NotificationSender>();
+            services.AddScoped<IOtpService, OtpService>();
 
             services.AddSingleton<IUserIdProvider, SubBasedUserIdProvider>();
+
+            //rate limiting
+            services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
+            services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+            services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+            services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
             return services;
         }
     }
